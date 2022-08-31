@@ -1,0 +1,77 @@
+.TH "upstate" "1"
+.\" -----------------------------------------------------------------
+.\" * disable hyphenation
+.nh
+.\" * disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.SH "NAME"
+upstate -- Prints a machine and process status report
+.SH "SYNOPSIS"
+.sp
+.nf
+\fBupstate\fR [options]
+.fi
+.SH "DESCRIPTION"
+.sp
+Prints a report containing machine and process metrics. Also checks for the
+existence of a number of configured processes. A short output example:
+.sp
+.nf
+    loadavg:  0.06 0.04 0.00             up 264 days * 192 processes * 1 cores
+    memory:   64 MB (6.6%) free          491 MB rss * 426 MB cache * 981 MB total
+    storage:  16.0 GB (66.6%) free       6.8 GB used * 24.1 GB total * on /
+    * system/cron [297]                  1 MB rss * up 264 days * cpu 00:01:38
+    * ntp [1402230]                      2 MB rss * up 159 days * cpu 00:34:48
+    * sshd [1975344]                     23 MB rss * up 108 days * cpu 00:00:00
+.fi
+.sp
+Information is read from the \fB/proc\fR filesystem or via the
+\fBdf\fR, \fBps\fR, \fBpgrep\fR or \fBpstree\fR utilities.
+.SH "OPTIONS"
+.sp
+\fB--summary\fR
+.RS 4
+Report only a short machine status summary.
+.RE
+\fB--limited\fR
+.RS 4
+Report excludes optional/hidden processes.
+.RE
+\fB--complete\fR
+.RS 4
+Report includes all processes (default).
+.RE
+\fB--json\fR
+.RS 4
+Prints the report in JSON output format.
+.RE
+.SH "CONFIGURATION"
+.sp
+The processes to check are configured in \fB/etc/upstate.conf\fR or
+\fB/usr/local/etc/upstate.conf\fR  with one line per process. Comment or blank
+lines are ignored. Each line contains the process or service name, pid file
+and an optional command-line argument to match:
+.sp
+.nf
+    cron            /var/run/crond.pid
+    sshd            /var/run/sshd.pid
+    local           - local-command-match
+    -rsyslog        /var/run/rsyslogd.pid
+.fi
+.sp
+Processes with a leading \fB-\fR character in the name are optional. These
+are omitted in \fB--limited\fR report and always ignored if missing.
+
+A pid file specified as \fB-\fR forces process lookup by either name or
+command-line match. Process lookup is also made in similar way if the pid
+file didn't exist or didn't match a running process.
+.SH "FILES"
+.sp
+.B /etc/upstate.conf
+.RS 4
+Service configuration file with one line per service.
+.RE
+.SH "SEE ALSO"
+.sp
+\fBdf\fR(1), \fBps\fR(1), \fBpgrep\fR(1), \fBpstree\fR(1), \fBproc\fR(5)
