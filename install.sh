@@ -21,9 +21,9 @@ download_url() {
     local FILE="$1" URL="$2"
     echo "# Downloading ${URL}..."
     if command -v curl > /dev/null ; then
-        curl -L -o "${FILE}" "${URL}"
+        curl --silent --location -o "${FILE}" "${URL}"
     elif command -v wget > /dev/null ; then
-        wget -O "${FILE}" "${URL}"
+        wget --quiet -O "${FILE}" "${URL}"
     elif command -v aria2c > /dev/null ; then
         aria2c -o "${FILE}" "${URL}"
     elif command -v pget > /dev/null ; then
@@ -57,14 +57,14 @@ download_files() {
 # Installs the source files
 install_files() {
     echo "Installing to /usr/local/bin/..."
-    install bin/upstate.sh /usr/local/bin/upstate
+    install -D bin/upstate.sh /usr/local/bin/upstate
     echo "Installing to /usr/local/share/man/..."
-    install --mode=rw-r--r-- man/man1/upstate.1 /usr/local/share/man/man1/
+    install -D --mode=644 man/man1/upstate.1 /usr/local/share/man/man1/upstate.1
     gzip -f /usr/local/share/man/man1/upstate.1
     echo "Installing to /usr/local/share/upstate/..."
-    install --mode=rw-r--r-- etc/upstate.conf /usr/local/share/upstate/
+    install -D --mode=644 etc/upstate.conf /usr/local/share/upstate/upstate.conf
     if [[ ! -r /etc/upstate.conf ]] && [[ ! -r /usr/local/etc/upstate.conf ]] ; then
-        install --mode=rw-r--r-- etc/upstate.conf /usr/local/etc/upstate.conf
+        install -D --mode=644 etc/upstate.conf /usr/local/etc/upstate.conf
         echo
         echo "An example /usr/local/etc/upstate.conf file has been installed."
         echo "Please edit to match your server configuration."
