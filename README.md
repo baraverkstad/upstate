@@ -32,6 +32,21 @@ for the existence of a number of configured processes. A short output example:
 ```
 
 
+## Installation
+
+The easiest installation is to use the installer script:
+
+```
+    curl -L https://raw.githubusercontent.com/baraverkstad/upstate/main/install.sh | bash
+```
+
+As an alternative, the `./install.sh` script can also be run directly from an
+unpacked download directory.
+
+A third option is to manually copy `bin/upstate.sh`, `man/man1/upstate.1` and
+`etc/upstate.conf` to their desired locations on the server.
+
+
 ## Configuration
 
 The processes to check are configured in `/etc/upstate.conf` or
