@@ -72,17 +72,6 @@ usage() {
     exit 1
 }
 
-# Checks if a command exists and allows specified options and arguments
-cmdtest() {
-    if [[ -z "$(command -v "$1")" ]] ; then
-        return 1
-    elif ! "$@" < /dev/null > /dev/null 2>&1 ; then
-        return 1
-    else
-        echo -n "$@"
-    fi
-}
-
 # Prints a label with a value
 label() {
     printf "${COLOR_GREY}%-9s${COLOR_OFF} %-26s " "$1:" "$2"
@@ -136,18 +125,19 @@ try() {
 
 # Prints CPU status summary
 cpusummary() {
-    local CORES=0 UPTIME=() LOADAVG=() PROCS=0 ELAPSED=""
+    local CORES=0 UPTIME=() ARR=() LOADAVG="" PROCS=0 ELAPSED=""
     CORES=$(grep -c processor /proc/cpuinfo)
     read -r -a UPTIME < /proc/uptime
-    read -r -a LOADAVG < /proc/loadavg
-    PROCS=$(awk -F / '{printf $2}' <<< "${LOADAVG[3]}")
+    read -r -a ARR < /proc/loadavg
+    LOADAVG=$(printf '%s, %s, %s' "${ARR[@]:0:3}")
+    PROCS=$(awk -F / '{printf $2}' <<< "${ARR[3]}")
     ELAPSED=$(elapsed "${UPTIME[0]%.*}")
-    label "loadavg" "${LOADAVG[*]:0:3}" >&3
+    label "loadavg" "${LOADAVG}" >&3
     detail "up ${ELAPSED}" "${PROCS} processes" "${CORES} cores" >&3
     echo >&3
     printf '  "cores": %s,\n' "${CORES}" >&4
     printf '  "uptime": %s,\n' "${UPTIME[0]%.*}" >&4
-    printf '  "loadavg": [%s,%s,%s],\n' "${LOADAVG[@]:0:3}" >&4
+    printf '  "loadavg": [%s],\n' "${LOADAVG}" >&4
     printf '  "processes": %s,\n' "${PROCS}" >&4
 }
 
@@ -180,22 +170,24 @@ memsummary() {
 
 # Prints storage status summary
 storagesummary() {
-    local DEVICE TOTAL_KB USED_KB FREE_KB MOUNT
+    local VOLUMES DEVICE TOTAL_KB USED_KB FREE_KB MOUNT
     printf '  "storage": [\n' >&4
-    df -k | tail -n +2 | while read -r DEVICE TOTAL_KB USED_KB FREE_KB _ MOUNT ; do
-        if [[ "${DEVICE}" == /dev/* ]] ; then
-            local FREE_GB FREE_PCT USED_GB TOTAL_GB
-            FREE_GB=$(gb "${FREE_KB}")
-            FREE_PCT=$(percent "${FREE_KB}" "${TOTAL_KB}")
-            USED_GB=$(gb "${USED_KB}")
-            TOTAL_GB=$(gb "${TOTAL_KB}")
-            label "storage" "${FREE_GB} (${FREE_PCT}) free" >&3
-            detail "${USED_GB} used" "${TOTAL_GB} total" "on ${MOUNT}" >&3
-            echo >&3
-            printf '    {"total": %s, "used": %s, "free": %s, "dev": "%s", "mount": "%s"},\n' \
-                "${TOTAL_KB}" "${USED_KB}" "${FREE_KB}" "${DEVICE}" "${MOUNT}" >&4
-        fi
-    done
+    VOLUMES=$(df -k | tail -n +2 | grep -E '^/dev/')
+    if [[ -r /.dockerenv ]] || grep -q -E 'docker|lxc' /proc/$$/cgroup ; then
+        VOLUMES=$(df -k / | tail -n +2)
+    fi
+    while read -r DEVICE TOTAL_KB USED_KB FREE_KB _ MOUNT ; do
+        local FREE_GB FREE_PCT USED_GB TOTAL_GB
+        FREE_GB=$(gb "${FREE_KB}")
+        FREE_PCT=$(percent "${FREE_KB}" "${TOTAL_KB}")
+        USED_GB=$(gb "${USED_KB}")
+        TOTAL_GB=$(gb "${TOTAL_KB}")
+        label "storage" "${FREE_GB} (${FREE_PCT}) free" >&3
+        detail "${USED_GB} used" "${TOTAL_GB} total" "on ${MOUNT}" >&3
+        echo >&3
+        printf '    {"total": %s, "used": %s, "free": %s, "dev": "%s", "mount": "%s"},\n' \
+            "${TOTAL_KB}" "${USED_KB}" "${FREE_KB}" "${DEVICE}" "${MOUNT}" >&4
+    done <<< "${VOLUMES}"
     printf '    null\n' >&4
     printf '  ],\n' >&4
 }
@@ -217,7 +209,7 @@ servicepid() {
 # Calculates service memory, swap, etc (incl. descendants)
 servicestats() {
     local PID=$1 PIDS=() RSS=0 SWAP=0 ARR VAL UPTIMES
-    read -r -a PIDS < <(${PSTREE} "${PID}" | grep -o -E '[0-9]+' | xargs)
+    read -r -a PIDS < <(pstree -p "${PID}" | grep -o -E '[^}]\(\d+\)' | grep -o -E '\d+' | xargs)
     while read -r VAL ; do
         RSS=$((RSS+VAL))
     done < <(ps -o 'rss=' "${PIDS[@]}")
@@ -369,6 +361,5 @@ main() {
 }
 
 # Parse command-line and launch
-PSTREE=$(cmdtest pstree -p -T || echo -n 'pstree -p')
 parseargs "$@"
 main
