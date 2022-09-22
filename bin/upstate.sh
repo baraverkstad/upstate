@@ -201,7 +201,7 @@ servicepid() {
         echo -n "${PID}"
     elif PID=$(pgrep -P 1 -o -f "${MATCH}") ; then
         echo -n "${PID}"
-    elif PID=$(pgrep -o -f "${MATCH}" | xargs ps -o 'ppid=') ; then
+    elif PID=$(pgrep -o -f "${MATCH}" | xargs ps -o 'ppid=' | xargs) ; then
         echo -n "${PID}"
     fi
 }
