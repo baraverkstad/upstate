@@ -172,8 +172,8 @@ memsummary() {
 storagesummary() {
     local VOLUMES DEVICE TOTAL_KB USED_KB FREE_KB MOUNT
     printf '  "storage": [\n' >&4
-    VOLUMES=$(df -k | tail -n +2 | grep -E '^/dev/')
-    if [[ -r /.dockerenv ]] || grep -q -E 'docker|lxc' /proc/$$/cgroup ; then
+    VOLUMES=$(df -k | tail -n +2 | grep -P '^/dev/')
+    if [[ -r /.dockerenv ]] || grep -q -P 'docker|lxc' /proc/$$/cgroup ; then
         VOLUMES=$(df -k / | tail -n +2)
     fi
     while read -r DEVICE TOTAL_KB USED_KB FREE_KB _ MOUNT ; do
@@ -209,7 +209,7 @@ servicepid() {
 # Calculates service memory, swap, etc (incl. descendants)
 servicestats() {
     local PID=$1 PIDS=() RSS=0 SWAP=0 ARR VAL UPTIMES
-    read -r -a PIDS < <(pstree -p "${PID}" | grep -o -E '[^}]\(\d+\)' | grep -o -E '\d+' | xargs)
+    read -r -a PIDS < <(pstree -p "${PID}" | grep -o -P '[^}]\(\d+\)' | grep -o -P '\d+' | xargs)
     while read -r VAL ; do
         RSS=$((RSS+VAL))
     done < <(ps -o 'rss=' "${PIDS[@]}")
