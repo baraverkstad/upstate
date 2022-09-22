@@ -245,7 +245,7 @@ serviceinfo() {
         RSS_MB=$(mb "${STATS[1]}")
         UPTIME=$(elapsed "${STATS[3]}")
         CPUTIME=$(elapsed "${STATS[4]}")
-        detail "${RSS_MB} rss" "up ${UPTIME}" "cpu ${CPUTIME}" >&3
+        detail "cpu ${CPUTIME}" "up ${UPTIME}" "${RSS_MB} rss" >&3
         printf '"pid": %s, "name": "%s", "rss": %s, "swap": %s, "uptime": %s, "cputime": %s' \
             "${PID}" "${NAME}" "${STATS[1]}" "${STATS[2]}" "${STATS[3]}" "${STATS[4]}" >&4
         if [[ -n "${WARNING}" ]] ; then
