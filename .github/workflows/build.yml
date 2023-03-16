@@ -7,6 +7,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  BUILDX_NO_DEFAULT_ATTESTATIONS: 1
+
 jobs:
   publish:
     runs-on: ubuntu-latest
