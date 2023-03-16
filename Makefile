@@ -16,5 +16,5 @@ test:
 docker:
 	docker buildx build . \
 		-t ghcr.io/baraverkstad/upstate:$(VERSION) \
-		--platform linux/amd64,linux/arm64 \
+		--platform linux/amd64,linux/arm/v6,linux/arm64 \
 		--push
