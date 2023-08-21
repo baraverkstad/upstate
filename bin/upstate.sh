@@ -84,7 +84,7 @@ detail() {
 
 # Prints the percentage quota of two values
 percent() {
-    echo "$@" | awk '{ printf("%.1f%", $1 * 100 / $2) }'
+    echo "$@" | awk '{ printf("%.1f%%", $1 * 100 / $2) }'
 }
 
 # Prints a kB value as MB
