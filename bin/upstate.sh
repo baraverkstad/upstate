@@ -209,7 +209,7 @@ servicepid() {
 # Calculates service memory, swap, etc (incl. descendants)
 servicestats() {
     local PID=$1 PIDS=() RSS=0 SWAP=0 ARR VAL UPTIMES
-    read -r -a PIDS < <(pstree -p "${PID}" | grep -o -P '[^}]\(\d+\)' | grep -o -P '\d+' | xargs)
+    read -r -a PIDS < <(pstree -p "${PID}" | grep -o -P '(?<=[^}]\()\d+(?=\))' | xargs)
     while read -r VAL ; do
         RSS=$((RSS+VAL))
     done < <(ps -o 'rss=' "${PIDS[@]}")
