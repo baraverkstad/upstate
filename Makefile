@@ -40,6 +40,9 @@ build:
 # Build and publish Docker image
 build-docker:
 	docker buildx build . \
+		--build-arg DATE=$(DATE) \
+		--build-arg COMMIT=$(COMMIT) \
+		--build-arg VERSION=$(VERSION) \
 		-t ghcr.io/baraverkstad/upstate:$(VERSION) \
 		--platform linux/amd64,linux/arm/v6,linux/arm64 \
 		--push

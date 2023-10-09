@@ -45,8 +45,8 @@ jobs:
 
     - name: Build Docker (main branch)
       if: ${{ github.ref_name == 'main' }}
-      run: make docker
+      run: make build-docker
 
     - name: Build Docker (tagged version)
       if: ${{ github.ref_name != 'main' }}
-      run: make "VERSION=${{ github.ref_name }}" docker
+      run: make "VERSION=${{ github.ref_name }}" build-docker
