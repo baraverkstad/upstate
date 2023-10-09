@@ -43,7 +43,7 @@ The easiest installation is to use the installer script:
 As an alternative, the `./install.sh` script can also be run directly from an
 unpacked download directory.
 
-A third option is to manually copy `bin/upstate.sh`, `man/man1/upstate.1` and
+A third option is to manually copy `bin/upstate{.sh}`, `man/man1/upstate.1` and
 `etc/upstate.conf` to their desired locations on the server.
 
 Finally, it is also possible to run from a Docker container with access to the

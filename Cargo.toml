@@ -1,0 +1,38 @@
+[package]
+name = "upstate"
+version = "2.0.0"
+authors = ["Per Cederberg <cederberg@gmail.com>"]
+license = "MIT"
+description = "Server metrics for man & machine."
+readme = "README.md"
+homepage = "https://github.com/baraverkstad/upstate"
+repository = "https://github.com/baraverkstad/upstate"
+keywords = ["cli", "json", "metrics", "process", "os", "system", "utility"]
+categories = ["command-line-utilities"]
+edition = "2021"
+
+[dependencies]
+colored = "2.0.4"
+humansize = "2.1.3"
+indoc = "2.0.3"
+procfs = "0.15.1"
+regex = "1.9.6"
+sysinfo = "0.29.9"
+
+[profile.release]
+opt-level = 'z'     # Optimize for size
+lto = true          # Enable link-time optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations
+panic = 'abort'     # Abort on panic
+strip = true        # Strip symbols from binary*
+
+[package.metadata.cross.build.env]
+passthrough = [
+    "DATE",
+    "COMMIT",
+    "VERSION",
+]
+
+[[bin]]
+name = "upstate"
+path = "src/main.rs"
