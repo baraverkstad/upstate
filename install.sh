@@ -16,6 +16,31 @@ die() {
     exit 1
 }
 
+print_os() {
+    case $(uname -s) in
+    "Linux") echo -n "linux" ;;
+    *)       echo -n "" ;;
+    esac
+}
+
+print_arch() {
+    case $(uname -m) in
+    "amd64"|"x86_64")  echo -n "amd64" ;;
+    "arm64"|"aarch64") echo -n "arm64" ;;
+    "armv6l")          echo -n "armv6" ;;
+    "armv7l")          echo -n "armv7" ;;
+    *)                 echo -n "" ;;
+    esac
+}
+
+print_libc() {
+    case "${OSTYPE:-}" in
+    *-gnu)  echo -n "gnu" ;;
+    *-musl) echo -n "musl" ;;
+    *)      echo -n "" ;;
+    esac
+}
+
 # Downloads a file from a URL
 download_url() {
     local FILE="$1" URL="$2"
@@ -35,17 +60,23 @@ download_url() {
 
 # Downloads and unpacks the source files
 download_files() {
-    local DIR URL
     if [[ $(basename "${PROGRAM}") == 'install.sh' ]] ; then
         cd "$(dirname "${PROGRAM}")"
     else
-        DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
+        local DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
         trap "rm -rf ${DIR}" EXIT
         cd "${DIR}"
+        local URL
         if [[ -z "${VERSION:-}" ]] ; then
             URL="https://github.com/baraverkstad/upstate/archive/master.zip"
         else
             URL="https://github.com/baraverkstad/upstate/archive/v${VERSION}.zip"
+        fi
+        local OS=$(print_os)
+        local ARCH=$(print_arch)
+        local LIBC=$(print_libc)
+        if [[ -n "${OS:-}" && -n "${ARCH:-}" && -n "${LIBC:-}" ]] ; then
+            URL="https://github.com/baraverkstad/upstate/releases/download/${VERSION:-latest}/upstate-${OS}-${ARCH}-${LIBC}.zip"
         fi
         download_url upstate.zip "${URL}"
         command -v unzip > /dev/null || die "couldn't locate unzip command"
@@ -57,7 +88,11 @@ download_files() {
 # Installs the source files
 install_files() {
     echo "Installing to /usr/local/bin/..."
-    install -D bin/upstate.sh /usr/local/bin/upstate
+    if [[ -f bin/upstate ]] ; then
+        install -D bin/upstate /usr/local/bin/upstate
+    else
+        install -D bin/upstate.sh /usr/local/bin/upstate
+    fi
     echo "Installing to /usr/local/share/man/..."
     install -D --mode=644 man/man1/upstate.1 /usr/local/share/man/man1/upstate.1
     gzip -f /usr/local/share/man/man1/upstate.1
