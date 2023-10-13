@@ -63,25 +63,32 @@ download_files() {
     if [[ $(basename "${PROGRAM}") == 'install.sh' ]] ; then
         cd "$(dirname "${PROGRAM}")"
     else
-        local DIR URL OS ARCH LIBC
+        local DIR URL OS ARCH LIBC BASE="https://github.com/baraverkstad/upstate"
+
         DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
         trap "rm -rf ${DIR}" EXIT
         cd "${DIR}"
         if [[ -z "${VERSION:-}" ]] ; then
-            URL="https://github.com/baraverkstad/upstate/archive/master.zip"
+            URL="${BASE}/archive/master.zip"
         else
-            URL="https://github.com/baraverkstad/upstate/archive/v${VERSION}.zip"
+            URL="${BASE}/archive/v${VERSION}.zip"
         fi
         OS=$(print_os)
         ARCH=$(print_arch)
         LIBC=$(print_libc)
         if [[ -n "${OS:-}" && -n "${ARCH:-}" && -n "${LIBC:-}" ]] ; then
-            URL="https://github.com/baraverkstad/upstate/releases/download/${VERSION:-latest}/upstate-${OS}-${ARCH}-${LIBC}.zip"
+            if [[ -z "${VERSION:-}" ]] ; then
+                URL="${BASE}/releases/latest/download/upstate-${OS}-${ARCH}-${LIBC}.zip"
+            else
+                URL="${BASE}/releases/download/${VERSION}/upstate-${OS}-${ARCH}-${LIBC}.zip"
+            fi
         fi
         download_url upstate.zip "${URL}"
         command -v unzip > /dev/null || die "couldn't locate unzip command"
         unzip -q -u -o upstate.zip
-        cd upstate-*
+        if [[ -d upstate-* ]] ; then
+            cd upstate-*
+        fi
     fi
 }
 
