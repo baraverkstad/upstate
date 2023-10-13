@@ -63,18 +63,18 @@ download_files() {
     if [[ $(basename "${PROGRAM}") == 'install.sh' ]] ; then
         cd "$(dirname "${PROGRAM}")"
     else
-        local DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
+        local DIR URL OS ARCH LIBC
+        DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
         trap "rm -rf ${DIR}" EXIT
         cd "${DIR}"
-        local URL
         if [[ -z "${VERSION:-}" ]] ; then
             URL="https://github.com/baraverkstad/upstate/archive/master.zip"
         else
             URL="https://github.com/baraverkstad/upstate/archive/v${VERSION}.zip"
         fi
-        local OS=$(print_os)
-        local ARCH=$(print_arch)
-        local LIBC=$(print_libc)
+        OS=$(print_os)
+        ARCH=$(print_arch)
+        LIBC=$(print_libc)
         if [[ -n "${OS:-}" && -n "${ARCH:-}" && -n "${LIBC:-}" ]] ; then
             URL="https://github.com/baraverkstad/upstate/releases/download/${VERSION:-latest}/upstate-${OS}-${ARCH}-${LIBC}.zip"
         fi
