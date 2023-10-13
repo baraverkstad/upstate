@@ -44,7 +44,7 @@ build-docker:
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION) \
 		-t ghcr.io/baraverkstad/upstate:$(VERSION) \
-		--platform linux/amd64,linux/arm/v6,linux/arm64 \
+		--platform linux/amd64,linux/arm64 \
 		--push
 
 # Run code style checks
