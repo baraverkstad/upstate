@@ -64,7 +64,6 @@ download_files() {
         cd "$(dirname "${PROGRAM}")"
     else
         local DIR URL OS ARCH LIBC BASE="https://github.com/baraverkstad/upstate"
-
         DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
         trap "rm -rf ${DIR}" EXIT
         cd "${DIR}"
@@ -86,8 +85,8 @@ download_files() {
         download_url upstate.zip "${URL}"
         command -v unzip > /dev/null || die "couldn't locate unzip command"
         unzip -q -u -o upstate.zip
-        if [[ -d upstate-* ]] ; then
-            cd upstate-*
+        if [[ -d "upstate" || -d "upstate-master" || -d "upstate-${VERSION:-latest}" ]] ; then
+            cd upstate*
         fi
     fi
 }
