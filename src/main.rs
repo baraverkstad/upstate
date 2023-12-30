@@ -101,7 +101,7 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
     let cores = sys.physical_core_count().unwrap_or(1);
     let uptime = sys.uptime();
     let loadavg = sys.load_average();
-    let load = format!("{}, {}, {}", loadavg.one, loadavg.five, loadavg.fifteen);
+    let load = format!("{:.2}, {:.2}, {:.2}", loadavg.one, loadavg.five, loadavg.fifteen);
     let procs = sys.processes().len();
     let detail = vec![
         format!("up {}", elapsed(uptime)),
