@@ -46,7 +46,7 @@ download_url() {
     local FILE="$1" URL="$2"
     echo "# Downloading ${URL}..."
     if command -v curl > /dev/null ; then
-        curl --silent --location -o "${FILE}" "${URL}"
+        curl --silent --location --fail -o "${FILE}" "${URL}"
     elif command -v wget > /dev/null ; then
         wget --quiet -O "${FILE}" "${URL}"
     elif command -v aria2c > /dev/null ; then
@@ -67,25 +67,18 @@ download_files() {
         DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
         trap "rm -rf ${DIR}" EXIT
         cd "${DIR}"
-        if [[ -z "${VERSION:-}" ]] ; then
-            URL="${BASE}/archive/master.zip"
-        else
-            URL="${BASE}/archive/v${VERSION}.zip"
-        fi
         OS=$(print_os)
         ARCH=$(print_arch)
         LIBC=$(print_libc)
-        if [[ -n "${OS:-}" && -n "${ARCH:-}" && -n "${LIBC:-}" ]] ; then
-            if [[ -z "${VERSION:-}" ]] ; then
-                URL="${BASE}/releases/latest/download/upstate-${OS}-${ARCH}-${LIBC}.zip"
-            else
-                URL="${BASE}/releases/download/${VERSION}/upstate-${OS}-${ARCH}-${LIBC}.zip"
-            fi
+        if [[ -z "${VERSION:-}" ]] ; then
+            URL="${BASE}/releases/latest/download/upstate-${OS:-*}-${ARCH:-*}-${LIBC:-*}.zip"
+        else
+            URL="${BASE}/releases/download/${VERSION}/upstate-${OS:-*}-${ARCH:-*}-${LIBC:-*}.zip"
         fi
-        download_url upstate.zip "${URL}"
+        download_url upstate.zip "${URL}" || die "failed to download URL"
         command -v unzip > /dev/null || die "couldn't locate unzip command"
         unzip -q -u -o upstate.zip
-        if [[ -d "upstate" || -d "upstate-master" || -d "upstate-${VERSION:-latest}" ]] ; then
+        if [[ -d "upstate" || -d "upstate-main" || -d "upstate-${VERSION:-latest}" ]] ; then
             cd upstate*
         fi
     fi
