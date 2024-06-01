@@ -1,7 +1,7 @@
 use procfs;
 use regex::RegexBuilder;
 use std::collections::HashMap;
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use sysinfo::System;
 
 pub struct ProcessMap {
     roots: Vec<u32>,
