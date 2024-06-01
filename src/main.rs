@@ -73,7 +73,7 @@ fn main() {
     fmt.json_open("", false, true);
     cpusummary(&sys, &mut fmt);
     memsummary(&sys, &mut fmt);
-    storagesummary(&sys, &mut fmt);
+    storagesummary(&mut fmt);
     let mut ret = 0;
     if mode > 0 {
         let config = conf::Config::new().unwrap_or_else(|err| {
@@ -99,8 +99,8 @@ fn elapsed(secs: u64) -> String {
 
 fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
     let cores = sys.physical_core_count().unwrap_or(1);
-    let uptime = sys.uptime();
-    let loadavg = sys.load_average();
+    let uptime = System::uptime();
+    let loadavg = System::load_average();
     let load = format!("{:.2}, {:.2}, {:.2}", loadavg.one, loadavg.five, loadavg.fifteen);
     let procs = sys.processes().len();
     let detail = vec![
@@ -142,11 +142,12 @@ fn memsummary(sys: &System, fmt: &mut fmt::Format) {
     fmt.json_close(false);
 }
 
-fn storagesummary(sys: &System, fmt: &mut fmt::Format) {
+fn storagesummary(fmt: &mut fmt::Format) {
     let sizefmt = FormatSizeOptions::from(BINARY).decimal_places(1);
     let mut devices = collections::HashSet::new();
     fmt.json_open("storage", true, true);
-    for disk in sys.disks() {
+    let disks = Disks::new_with_refreshed_list();
+    for disk in disks.list() {
         if let DiskKind::Unknown(_) = disk.kind() {
             continue;
         } else if devices.contains(disk.name()) {
@@ -210,7 +211,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
     for pid in services {
         if all && !found.contains(&pid) {
             let proc = sys.process(Pid::from_u32(pid)).unwrap();
-            if !proc.exe().exists() && proc.memory() == 0 {
+            if !proc.exe().is_some() && proc.memory() == 0 {
                 // Lets ignore kernel threads
                 continue;
             }
