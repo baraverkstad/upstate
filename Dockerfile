@@ -2,8 +2,8 @@ FROM alpine:3.18 as build
 ARG DATE
 ARG COMMIT
 ARG VERSION
-RUN apk add --no-cache \
-        cargo && \
+RUN apk --no-cache upgrade && \
+    apk --no-cache add cargo && \
     mkdir /build
 ADD Cargo.toml Cargo.lock /build/
 ADD src /build/src/
@@ -12,8 +12,8 @@ RUN cd /build && \
     cargo build --release
 
 FROM alpine:3.18
-RUN apk add --no-cache \
-        libgcc
+RUN apk --no-cache upgrade && \
+    apk --no-cache add libgcc
 COPY --from=build /build/target/release/upstate /usr/local/bin/upstate
 ADD etc/upstate.conf /usr/local/etc/
 ADD man/man1 /usr/local/man/
