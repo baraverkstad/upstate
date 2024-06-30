@@ -1,5 +1,5 @@
 use std::env;
-use std::fs;
+use std::fs::read_to_string;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 
@@ -8,8 +8,40 @@ use crate::proc::ProcessMap;
 pub struct ConfigItem {
     name: String,
     required: bool,
+    multiple: bool,
     pidfile: Option<String>,
     command: Option<String>,
+}
+
+impl ConfigItem {
+    pub fn matches(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
+        let mut found = vec![];
+        let cmd = self.command.as_ref().or(Some(&self.name)).unwrap();
+        let m1 = self
+            .pidfile
+            .as_ref()
+            .and_then(|f| read_to_string(f).ok())
+            .and_then(|s| s.trim().parse::<u32>().ok())
+            .and_then(|p| procs.service_by_pid(&p));
+        let mut m2 = procs.services_by_cmd(cmd);
+        m2.sort();
+        if m1.is_some() {
+            found.push((&self.name, m1.unwrap(), String::from("")));
+        } else if m2.len() == 0 && self.required {
+            found.push((&self.name, 0, String::from("service not running")));
+        } else if m2.len() > 0 {
+            let mut msg = String::from("");
+            if self.pidfile.is_some() {
+                msg = format!("invalid PID file {}", self.pidfile.as_ref().unwrap());
+            } else if m2.len() > 1 && !self.multiple {
+                msg = String::from("multiple matching processes");
+            }
+            for pid in m2 {
+                found.push((&self.name, pid, msg.clone()));
+            }
+        }
+        return found;
+    }
 }
 
 pub struct Config(Vec<ConfigItem>);
@@ -18,16 +50,17 @@ impl Config {
     pub fn new() -> Result<Config, Error> {
         let filename = locate()?;
         let mut items = vec![];
-        for line in fs::read_to_string(filename)?.lines() {
+        for line in read_to_string(filename)?.lines() {
             let mut parts = line.split_whitespace();
             let title = parts.next().unwrap_or("");
             let pidfile = parts.next().map(|s| s.to_string()).filter(|s| s != "-");
             let cmd = parts.collect::<Vec<&str>>().join(" ");
             if !title.is_empty() && !title.starts_with("#") {
-                let required = !title.starts_with("-");
-                let name = title.trim_start_matches("-").to_string();
+                let name = title.trim_start_matches(&['-', '+', '*']).to_string();
+                let required = !title.starts_with(&['-', '*']);
+                let multiple = title.starts_with(&['+', '*']);
                 let command = (cmd.len() > 0).then(|| cmd);
-                items.push(ConfigItem { name, required, pidfile, command });
+                items.push(ConfigItem { name, required, multiple, pidfile, command });
             }
         }
         return Ok(Config(items));
@@ -38,32 +71,7 @@ impl Config {
     }
 
     pub fn all(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
-        return self
-            .0
-            .iter()
-            .map(|item| -> (&String, u32, String) {
-                let cmd = item.command.as_ref().or(Some(&item.name)).unwrap();
-                let m1 = item
-                    .pidfile
-                    .as_ref()
-                    .and_then(|f| fs::read_to_string(f).ok())
-                    .and_then(|s| s.trim().parse::<u32>().ok())
-                    .and_then(|p| procs.service_by_pid(&p));
-                let m2 = procs.service_by_cmd(cmd);
-                if m1.is_some() {
-                    return (&item.name, m1.unwrap(), String::from(""));
-                } else if m2.is_some() {
-                    let mut msg = String::from("");
-                    if item.pidfile.is_some() {
-                        msg = format!("invalid PID file {}", item.pidfile.as_ref().unwrap());
-                    }
-                    return (&item.name, m2.unwrap(), msg);
-                } else {
-                    let msg = if item.required { "service not running" } else { "" };
-                    return (&item.name, 0, String::from(msg));
-                }
-            })
-            .collect();
+        return self.0.iter().flat_map(|item| item.matches(&procs)).collect();
     }
 }
 

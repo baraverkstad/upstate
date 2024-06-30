@@ -74,11 +74,15 @@ impl ProcessMap {
         return self.info.contains_key(pid).then(|| self.as_service(pid));
     }
 
-    pub fn service_by_cmd(&self, cmd: &str) -> Option<u32> {
+    pub fn services_by_cmd(&self, cmd: &str) -> Vec<u32> {
         let re = RegexBuilder::new(cmd).case_insensitive(true).build().unwrap();
         let is_match = |s: &String| s.contains(cmd) || re.is_match(s);
-        let found = self.info.iter().filter_map(|(k, v)| is_match(&v.cmd).then(|| k));
-        return found.map(|p| self.as_service(p)).min();
+        return self
+            .info
+            .iter()
+            .filter_map(|(k, v)| is_match(&v.cmd).then(|| k))
+            .map(|p| self.as_service(p))
+            .collect();
     }
 
     pub fn stat(&self, pid: &u32) -> (u64, u64) {

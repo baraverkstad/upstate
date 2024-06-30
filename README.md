@@ -74,6 +74,13 @@ and an optional command-line argument to match:
 Processes with a leading `-` character in the name are optional. These
 are omitted in `--limited` report and always ignored if missing.
 
+Processes with a leading `+` character in the name may match multiple
+processes (at least one).
+
+Processes with a leading `*` character in the name are optional, but
+may match multiple processes. These are omitted in `--limited` report
+and always ignored if missing.
+
 A pid file specified as `-` forces process lookup by either name or
 command-line match. Process lookup is also made in similar way if the pid
 file didn't exist or didn't match a running process.
