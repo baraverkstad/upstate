@@ -8,6 +8,7 @@ use crate::proc::ProcessMap;
 pub struct ConfigItem {
     name: String,
     required: bool,
+    multiple: bool,
     pidfile: Option<String>,
     command: Option<String>,
 }
@@ -24,10 +25,11 @@ impl Config {
             let pidfile = parts.next().map(|s| s.to_string()).filter(|s| s != "-");
             let cmd = parts.collect::<Vec<&str>>().join(" ");
             if !title.is_empty() && !title.starts_with("#") {
-                let required = !title.starts_with("-");
-                let name = title.trim_start_matches("-").to_string();
+                let required = !title.starts_with(&['-', '+']);
+                let multiple = !title.starts_with('+');
+                let name = title.trim_start_matches(&['-', '+']).to_string();
                 let command = (cmd.len() > 0).then(|| cmd);
-                items.push(ConfigItem { name, required, pidfile, command });
+                items.push(ConfigItem { name, required, multiple, pidfile, command });
             }
         }
         return Ok(Config(items));
@@ -38,10 +40,11 @@ impl Config {
     }
 
     pub fn all(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
+        // FIXME: how to block returning same PID for multiple services???
         return self
             .0
             .iter()
-            .map(|item| -> (&String, u32, String) {
+            .flat_map(|item| -> (&String, u32, String) {
                 let cmd = item.command.as_ref().or(Some(&item.name)).unwrap();
                 let m1 = item
                     .pidfile
