@@ -185,17 +185,15 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
     fmt.json_open("services", true, true);
     for (title, pid, err) in conf.all(&procs) {
         if pid <= 0 {
-            if err.len() > 0 {
-                let name = format!("{} [{}]", title, "?");
-                fmt.text_proc_err(name, err.clone());
-                fmt.json_open("", false, false);
-                fmt.json_key_val("pid", 0);
-                fmt.json_key_str("name", title);
-                fmt.json_key_str("error", err);
-                fmt.json_close(false);
-                errors += 1;
-            }
-        } else {
+            let name = format!("{} [{}]", title, "?");
+            fmt.text_proc_err(name, err.clone());
+            fmt.json_open("", false, false);
+            fmt.json_key_val("pid", 0);
+            fmt.json_key_str("name", title);
+            fmt.json_key_str("error", err);
+            fmt.json_close(false);
+            errors += 1;
+        } else if !found.contains(&pid) {
             found.push(pid);
             let proc = sys.process(Pid::from_u32(pid)).unwrap();
             let uptime = epoch - proc.start_time();
