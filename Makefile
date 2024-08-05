@@ -7,7 +7,7 @@ all:
 	@grep -E -A 1 '^#' Makefile | awk 'BEGIN { RS = "--\n"; FS = "\n" }; { sub("#+ +", "", $$1); sub(":.*", "", $$2); printf " · make %-18s- %s\n", $$2, $$1}'
 	@echo
 	@echo '🚀 Release builds'
-	@echo ' · make VERSION=v1.0 build build-docker package'
+	@echo ' · make VERSION=v1.0 build-release package'
 	@echo
 	@echo '💡 Related commands'
 	@echo ' · cargo fmt              - Format all Rust source code'
@@ -21,9 +21,12 @@ clean:
 run:
 	cargo run
 
-# Build release targets
+# Build local binary
 build:
 	cargo build --release
+
+# Build multi-architecture binaries
+build-release:
 	@echo "Building for arm-unknown-linux-gnueabihf (Raspberry Pi 0/1)"
 	cross build --release --target arm-unknown-linux-gnueabihf
 	@echo "Building for armv7-unknown-linux-gnueabihf (Raspberry Pi 2/3/4)"
@@ -37,15 +40,12 @@ build:
 	@echo "Building for x86_64-unknown-linux-musl (Intel x86-64, musl)"
 	cross build --release --target x86_64-unknown-linux-musl
 
-# Build and publish Docker image
+# Build Docker image
 build-docker:
-	docker buildx build . \
+	docker build . \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
-		--build-arg VERSION=$(VERSION) \
-		-t ghcr.io/baraverkstad/upstate:$(VERSION) \
-		--platform linux/amd64,linux/arm64 \
-		--push
+		--build-arg VERSION=$(VERSION)
 
 # Run code style checks
 test:
