@@ -194,7 +194,7 @@ storagesummary() {
 
 # Locates a service PID by PID file or name match
 servicepid() {
-    local NAME=$1 PIDFILE=${2:--} MATCH=${3:-${NAME}} PID
+    local NAME=$1 PIDFILE=${2:--} MATCH=${3:-$1} PID
     if [[ -r "${PIDFILE}" ]] && PID=$(($(<"${PIDFILE}"))) && [[ -d "/proc/${PID}" ]] ; then
         echo -n "${PID}"
     elif PID=$(pgrep -P 1 -o "${MATCH}") ; then

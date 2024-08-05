@@ -49,7 +49,7 @@ build-docker:
 
 # Run code style checks
 test:
-	shellcheck -o all -e SC2249,SC2310,SC2311,SC2312 $(shell find . -name *.sh)
+	shellcheck -o all -e SC2249,SC2310,SC2311,SC2312 $(shell find . -name '*.sh')
 
 # Package binaries for release
 package: upstate-linux-armv6-gnu.zip upstate-linux-armv7-gnu.zip \
