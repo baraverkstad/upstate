@@ -43,17 +43,18 @@ The easiest installation is to use the installer script:
 As an alternative, the `./install.sh` script can also be run directly from an
 unpacked download directory.
 
-A third option is to manually copy `bin/upstate{.sh}`, `man/man1/upstate.1` and
+A third option is to manually copy the `upstate` binary, `man/man1/upstate.1` and
 `etc/upstate.conf` to their desired locations on the server.
 
-Finally, it is also possible to run from a Docker container with access to the
-host machine processes and PID files:
+Finally, it is also possible to build a Docker image (`make build-docker`)
+and run from a container with access to the host machine processes and PID
+files:
 
 ```
     docker run --rm --tty --pid host \
         -v /etc/upstate.conf:/etc/upstate.conf \
         -v /var/run:/var/run:ro \
-        baraverkstad/upstate
+        upstate:latest
 ```
 
 
