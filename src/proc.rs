@@ -1,6 +1,7 @@
 use procfs;
 use regex::RegexBuilder;
 use std::collections::HashMap;
+use std::ffi::OsStr;
 use sysinfo::System;
 
 pub struct ProcessInfo {
@@ -25,7 +26,7 @@ impl ProcessMap {
         for (pid, proc) in sys.processes() {
             if proc.thread_kind().is_none() {
                 children.entry(pid.as_u32()).or_insert(vec![]);
-                let cmd = proc.cmd().join(" ");
+                let cmd = proc.cmd().join(OsStr::new(" ")).to_string_lossy().into_owned();
                 let mut cpu = 0;
                 let rss = proc.memory();
                 // FIXME: Ideally sysinfo should provide this instead...

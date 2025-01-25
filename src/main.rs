@@ -216,7 +216,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
             let uptime = epoch - proc.start_time();
             let (cputime, rssbytes) = procs.stat(&pid);
             let warn = "service not listed in config";
-            procitem(fmt, pid, proc.name(), cputime, uptime, rssbytes, warn);
+            procitem(fmt, pid, proc.name().to_str().unwrap(), cputime, uptime, rssbytes, warn);
         }
     }
     fmt.json_close(true);
