@@ -98,7 +98,7 @@ fn elapsed(secs: u64) -> String {
 }
 
 fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
-    let cores = sys.physical_core_count().unwrap_or(1);
+    let cores = System::physical_core_count().unwrap_or(1);
     let uptime = System::uptime();
     let loadavg = System::load_average();
     let load = format!("{:.2}, {:.2}, {:.2}", loadavg.one, loadavg.five, loadavg.fifteen);

@@ -1,4 +1,3 @@
-use procfs;
 use regex::RegexBuilder;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -27,13 +26,8 @@ impl ProcessMap {
             if proc.thread_kind().is_none() {
                 children.entry(pid.as_u32()).or_insert(vec![]);
                 let cmd = proc.cmd().join(OsStr::new(" ")).to_string_lossy().into_owned();
-                let mut cpu = 0;
                 let rss = proc.memory();
-                // FIXME: Ideally sysinfo should provide this instead...
-                let ps = procfs::process::Process::new(pid.as_u32() as i32);
-                if let Ok(stat) = ps.and_then(|p| p.stat()) {
-                    cpu = (stat.utime + stat.stime) / procfs::ticks_per_second();
-                }
+                let cpu = proc.accumulated_cpu_time() / 1000;
                 info.insert(pid.as_u32(), ProcessInfo { cmd, cpu, rss });
                 if let Some(ppid) = proc.parent() {
                     parents.insert(pid.as_u32(), ppid.as_u32());
