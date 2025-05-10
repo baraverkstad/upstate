@@ -1,5 +1,5 @@
 use colored::Colorize;
-use humansize::{format_size, FormatSizeOptions, BINARY};
+use humansize::{BINARY, FormatSizeOptions, format_size};
 use indoc::indoc;
 use std::collections;
 use std::fmt::Display;
