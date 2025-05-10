@@ -87,11 +87,7 @@ download_files() {
 # Installs the source files
 install_files() {
     echo "Installing to /usr/local/bin/..."
-    if [[ -f bin/upstate ]] ; then
-        install -D bin/upstate /usr/local/bin/upstate
-    else
-        install -D bin/upstate.sh /usr/local/bin/upstate
-    fi
+    install -D bin/upstate /usr/local/bin/upstate
     echo "Installing to /usr/local/share/man/..."
     install -D --mode=644 man/man1/upstate.1 /usr/local/share/man/man1/upstate.1
     gzip -f /usr/local/share/man/man1/upstate.1
