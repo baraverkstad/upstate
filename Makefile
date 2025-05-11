@@ -15,7 +15,7 @@ all:
 	@grep -E -A 1 '^#' Makefile | awk 'BEGIN { RS = "--\n"; FS = "\n" }; { sub("#+ +", "", $$1); sub(":.*", "", $$2); printf " · make %-18s- %s\n", $$2, $$1}'
 	@echo
 	@echo '🚀 Release builds'
-	@echo ' · make VERSION=v1.0 build-release package'
+	@echo ' · make VERSION=v1.0 build-release'
 	@echo
 	@echo '💡 Related commands'
 	@echo ' · cargo fmt              - Format all Rust source code'
