@@ -1,0 +1,3 @@
+# Example local services
+caddy	- caddy
+php		- php-fpm: master

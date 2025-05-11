@@ -48,19 +48,20 @@ pub struct Config(Vec<ConfigItem>);
 
 impl Config {
     pub fn new() -> Result<Config, Error> {
-        let filename = locate()?;
         let mut items = vec![];
-        for line in read_to_string(filename)?.lines() {
-            let mut parts = line.split_whitespace();
-            let title = parts.next().unwrap_or("");
-            let pidfile = parts.next().map(|s| s.to_string()).filter(|s| s != "-");
-            let cmd = parts.collect::<Vec<&str>>().join(" ");
-            if !title.is_empty() && !title.starts_with("#") {
-                let name = title.trim_start_matches(&['-', '+', '*']).to_string();
-                let required = !title.starts_with(&['-', '*']);
-                let multiple = title.starts_with(&['+', '*']);
-                let command = (cmd.len() > 0).then(|| cmd);
-                items.push(ConfigItem { name, required, multiple, pidfile, command });
+        for path in locate()? {
+            for line in read_to_string(path)?.lines() {
+                let mut parts = line.split_whitespace();
+                let title = parts.next().unwrap_or("");
+                let pidfile = parts.next().map(|s| s.to_string()).filter(|s| s != "-");
+                let cmd = parts.collect::<Vec<&str>>().join(" ");
+                if !title.is_empty() && !title.starts_with("#") {
+                    let name = title.trim_start_matches(&['-', '+', '*']).to_string();
+                    let required = !title.starts_with(&['-', '*']);
+                    let multiple = title.starts_with(&['+', '*']);
+                    let command = (cmd.len() > 0).then(|| cmd);
+                    items.push(ConfigItem { name, required, multiple, pidfile, command });
+                }
             }
         }
         return Ok(Config(items));
@@ -79,23 +80,35 @@ fn missing(msg: &str) -> Error {
     Error::new(ErrorKind::NotFound, msg)
 }
 
-fn validpath(path: PathBuf) -> Option<PathBuf> {
-    path.exists().then_some(path)
-}
-
-fn locate() -> Result<PathBuf, Error> {
+fn locate() -> Result<Vec<PathBuf>, Error> {
     if let Ok(str) = env::var("UPSTATE_CONF") {
-        return validpath(Path::new(&str).to_path_buf())
-            .ok_or_else(|| missing(&format!("config file not found: {}", str)));
+        let path = Path::new(&str).to_path_buf();
+        if path.is_file() {
+            return Ok(vec![path]);
+        } else if path.is_dir() {
+            return locate_files(path);
+        } else {
+            return Err(missing(&format!("config file not found: {}", str)));
+        }
     }
     let alt1 = env::current_exe()?;
     let alt2 = env::current_dir()?;
     for dir in alt1.ancestors().skip(1).chain(alt2.ancestors()) {
-        let p1 = validpath(dir.join("upstate.conf"));
-        let p2 = validpath(dir.join("etc/upstate.conf"));
-        if let Some(cfg) = p1.or(p2) {
-            return Ok(cfg);
+        let mut path;
+        if (path = dir.join("upstate.conf")) == () && path.is_file() {
+            return Ok(vec![path]);
+        } else if (path = dir.join("etc/upstate.conf")) == () && path.is_file() {
+            return Ok(vec![path]);
+        } else if (path = dir.join("etc/upstate.conf.d")) == () && path.is_dir() {
+            return locate_files(path);
         }
     }
     return Err(missing("no upstate.conf file found"));
+}
+
+fn locate_files(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
+    let paths = path.read_dir()?.filter_map(|e| e.ok()).map(|e| e.path());
+    let mut files: Vec<_> = paths.filter(|p| p.is_file()).collect();
+    files.sort();
+    return Ok(files);
 }

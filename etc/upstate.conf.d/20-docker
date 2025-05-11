@@ -1,0 +1,3 @@
+# Example Docker services
+-dockerd		/var/run/docker.pid
+-containerd		- ^/usr/bin/containerd$

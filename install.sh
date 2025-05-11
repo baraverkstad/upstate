@@ -92,13 +92,9 @@ install_files() {
     install -D --mode=644 man/man1/upstate.1 /usr/local/share/man/man1/upstate.1
     gzip -f /usr/local/share/man/man1/upstate.1
     echo "Installing to /usr/local/share/upstate/..."
-    install -D --mode=644 etc/upstate.conf /usr/local/share/upstate/upstate.conf
-    if [[ ! -r /etc/upstate.conf ]] && [[ ! -r /usr/local/etc/upstate.conf ]] ; then
-        install -D --mode=644 etc/upstate.conf /usr/local/etc/upstate.conf
-        echo
-        echo "An example /usr/local/etc/upstate.conf file has been installed."
-        echo "Please edit to match your server configuration."
-    fi
+    install -D -d /usr/local/share/upstate/
+    cp -r etc/* /usr/local/share/upstate/
+    chmod -R go-w /usr/local/share/upstate/
 }
 
 [[ $(whoami) == 'root' ]] || die "only root can run the installation"

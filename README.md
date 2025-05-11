@@ -60,8 +60,13 @@ files:
 
 ## Configuration
 
-The processes to check are configured in `/etc/upstate.conf` or
-`/usr/local/etc/upstate.conf` with one line per process. Comment or blank
+The processes to check are configured in a single `upstate.conf` file or an
+`upstate.conf.d` directory with partial config files. These files are located
+based on the binary location or the current working dir. As an alternative
+the `UPSTATE_CONF` environment variable may point to either a file or
+directory with configuration.
+
+The configuration files should contain one line per process. Comment or blank
 lines are ignored. Each line contains the process or service name, pid file
 and an optional command-line argument to match:
 

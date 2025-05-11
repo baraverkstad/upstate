@@ -48,8 +48,13 @@ Prints the report in JSON output format.
 .RE
 .SH "CONFIGURATION"
 .sp
-The processes to check are configured in \fB/etc/upstate.conf\fR or
-\fB/usr/local/etc/upstate.conf\fR  with one line per process. Comment or blank
+The processes to check are configured in a single \fBupstate.conf\fR file or an
+\fBupstate.conf.d\fR directory with partial config files. These files are located
+based on the binary location or the current working dir. As an alternative
+the \fBUPSTATE_CONF\fR environment variable may point to either a file or
+directory with configuration.
+.sp
+The configuration files should contain one line per process. Comment or blank
 lines are ignored. Each line contains the process or service name, pid file
 and an optional command-line argument to match:
 .sp

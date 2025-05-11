@@ -1,0 +1,4 @@
+# Example required services
+sshd			/var/run/sshd.pid
+nginx			/var/run/nginx.pid
+mysql			/var/run/mysqld/mysqld.pid
