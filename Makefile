@@ -36,7 +36,7 @@ build:
 # Build multi-architecture binaries
 build-cross:
 	$(call CROSSBUILD, arm-unknown-linux-gnueabihf,   linux-armv6-gnu,  Raspberry Pi 0/1)
-	$(call CROSSBUILD, armv7-unknown-linux-gnueabihf, linux-armv7-gnu,  Raspberry Pi 2/3/4)
+	$(call CROSSBUILD, armv7-unknown-linux-gnueabihf, linux-armv7-gnu,  Raspberry Pi 2/3)
 	$(call CROSSBUILD, aarch64-unknown-linux-gnu,     linux-arm64-gnu,  ARMv8/GNU libc)
 	$(call CROSSBUILD, aarch64-unknown-linux-musl,    linux-arm64-musl, ARMv8/musl)
 	$(call CROSSBUILD, x86_64-unknown-linux-gnu,      linux-amd64-gnu,  x86-64/GNU libc)
