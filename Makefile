@@ -34,7 +34,7 @@ build:
 	cargo build --release
 
 # Build multi-architecture binaries
-build-release:
+build-cross:
 	$(call CROSSBUILD, arm-unknown-linux-gnueabihf,   linux-armv6-gnu,  Raspberry Pi 0/1)
 	$(call CROSSBUILD, armv7-unknown-linux-gnueabihf, linux-armv7-gnu,  Raspberry Pi 2/3/4)
 	$(call CROSSBUILD, aarch64-unknown-linux-gnu,     linux-arm64-gnu,  ARMv8/GNU libc)
@@ -48,6 +48,15 @@ build-docker:
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION)
+
+build-docker-release:
+	docker buildx build
+		--build-arg DATE=$(DATE) \
+		--build-arg COMMIT=$(COMMIT) \
+		--build-arg VERSION=$(VERSION) \
+		--platform linux/amd64,linux/arm64 \
+		--tag ghcr.io/baraverkstad/upstate:$(VERSION) \
+		--push
 
 # Run code style checks
 test:
