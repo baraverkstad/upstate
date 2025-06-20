@@ -54,7 +54,7 @@ fn main() {
             }
             "--version" => {
                 eprintln!(
-                    "Upstate \u{2219} {} ({}, rev. {})",
+                    "Upstate ({}, {}, @{})",
                     env!("VERSION"),
                     env!("DATE"),
                     env!("COMMIT")
