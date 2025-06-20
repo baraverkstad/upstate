@@ -50,7 +50,7 @@ build-docker:
 		--build-arg VERSION=$(VERSION)
 
 build-docker-release:
-	docker buildx build
+	docker buildx build . \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION) \
