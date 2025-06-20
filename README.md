@@ -46,15 +46,14 @@ unpacked download directory.
 A third option is to manually copy the `upstate` binary, `man/man1/upstate.1` and
 `etc/upstate.conf` to their desired locations on the server.
 
-Finally, it is also possible to build a Docker image (`make build-docker`)
-and run from a container with access to the host machine processes and PID
-files:
+Finally, it is also possible to run as a Docker container with access to the host
+machine processes and PID files:
 
 ```
     docker run --rm --tty --pid host \
-        -v /etc/upstate.conf:/etc/upstate.conf \
+        -v /etc/upstate.conf:/etc/upstate.conf:ro \
         -v /var/run:/var/run:ro \
-        upstate:latest
+        ghcr.io/baraverkstad/upstate:latest
 ```
 
 
