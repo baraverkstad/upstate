@@ -22,7 +22,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set Version Tag
+    - name: Set Version (main)
+      if: ${{ github.ref_name == 'main' }}
+      run: echo "VERSION=latest" >> $GITHUB_ENV
+
+    - name: Set Version (tag)
       if: ${{ github.ref_name != 'main' }}
       run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
 
