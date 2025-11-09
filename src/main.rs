@@ -115,7 +115,7 @@ fn memsummary(sys: &System, fmt: &mut fmt::Format) {
     let total = sys.total_memory();
     let free = sys.free_memory();
     let freepct = 100_f64 * free as f64 / total as f64;
-    let cache = sys.available_memory() - free;
+    let cache = sys.available_memory().saturating_sub(free);
     let rss = sys.used_memory();
     let swap = sys.used_swap();
     let mem = format!("{} ({:.1}%) free", format_size(free, sizefmt), freepct);
