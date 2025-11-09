@@ -1,5 +1,5 @@
 export DATE    := $(shell date '+%F')
-export COMMIT  := $(shell git rev-parse --short=8 HEAD)
+export COMMIT  := $(shell GIT_CONFIG_GLOBAL=/dev/null git rev-parse --short=8 HEAD)
 export VERSION := latest
 
 define CROSSBUILD
@@ -60,4 +60,9 @@ build-docker-release:
 
 # Run code style checks
 test:
-	shellcheck -o all -e SC2249,SC2310,SC2311,SC2312 $(shell find . -name '*.sh')
+	cargo clippy
+	cargo fmt --check
+
+test-fix:
+	cargo clippy --fix --allow-dirty --allow-staged
+	cargo fmt
