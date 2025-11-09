@@ -18,7 +18,7 @@ all:
 	@echo ' · make VERSION=v1.0 build-release'
 	@echo
 	@echo '💡 Related commands'
-	@echo ' · cargo fmt              - Format all Rust source code'
+	@echo ' · rustup update          - Update Rust toolchain to latest version'
 	@echo ' · cargo update           - Update dependencies to latest version'
 
 # Cleanup intermediary files
