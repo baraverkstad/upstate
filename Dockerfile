@@ -3,7 +3,7 @@ ARG DATE
 ARG COMMIT
 ARG VERSION
 RUN apk --no-cache upgrade && \
-    apk --no-cache add rustup && \
+    apk --no-cache add build-base rustup && \
     rustup-init -y && \
     mkdir /build
 ADD Cargo.toml Cargo.lock /build/
