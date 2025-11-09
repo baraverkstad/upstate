@@ -3,12 +3,14 @@ ARG DATE
 ARG COMMIT
 ARG VERSION
 RUN apk --no-cache upgrade && \
-    apk --no-cache add cargo && \
+    apk --no-cache add rustup && \
+    rustup-init -y && \
     mkdir /build
 ADD Cargo.toml Cargo.lock /build/
 ADD src /build/src/
 ENV DATE=${DATE} COMMIT=${COMMIT} VERSION=${VERSION}
 RUN cd /build && \
+    source $HOME/.cargo/env && \
     cargo build --release
 
 FROM alpine:3.22
