@@ -37,47 +37,45 @@ impl ProcessMap {
                 }
             }
         }
-        return ProcessMap { roots, parents, children, info };
+        ProcessMap { roots, parents, children, info }
     }
 
     fn is_service(&self, pid: &u32) -> bool {
-        let ppid = self.parents.get(pid);
-        return ppid.is_none() || self.roots.contains(ppid.unwrap());
+        self.parents.get(pid).is_none_or(|ppid| self.roots.contains(ppid))
     }
 
     fn as_service(&self, pid: &u32) -> u32 {
         if self.is_service(pid) {
             return *pid;
         }
-        let ppid = self.parents.get(pid);
-        if self.is_service(ppid.unwrap()) {
-            return *ppid.unwrap();
-        } else {
-            return *pid;
+        if let Some(ppid) = self.parents.get(pid) {
+            if self.is_service(ppid) {
+                return *ppid;
+            }
         }
+        *pid
     }
 
     pub fn services(&self) -> Vec<u32> {
         let mut pids = vec![];
         for pid in &self.roots {
-            pids.extend(self.children.get(&pid).unwrap());
+            pids.extend(self.children.get(pid).unwrap());
         }
-        return pids;
+        pids
     }
 
     pub fn service_by_pid(&self, pid: &u32) -> Option<u32> {
-        return self.info.contains_key(pid).then(|| self.as_service(pid));
+        self.info.contains_key(pid).then(|| self.as_service(pid))
     }
 
     pub fn services_by_cmd(&self, cmd: &str) -> Vec<u32> {
         let re = RegexBuilder::new(cmd).case_insensitive(true).build().unwrap();
         let is_match = |s: &String| s.contains(cmd) || re.is_match(s);
-        return self
-            .info
+        self.info
             .iter()
-            .filter_map(|(k, v)| is_match(&v.cmd).then(|| k))
-            .map(|p| self.as_service(p))
-            .collect();
+            .filter(|(_, v)| is_match(&v.cmd))
+            .map(|(k, _)| self.as_service(k))
+            .collect()
     }
 
     pub fn stat(&self, pid: &u32) -> (u64, u64) {
@@ -86,12 +84,14 @@ impl ProcessMap {
         if let Some(info) = self.info.get(pid) {
             cpu += info.cpu;
             rss += info.rss;
-            for cid in self.children.get(pid).unwrap() {
-                let (c, r) = self.stat(cid);
-                cpu += c;
-                rss += r;
+            if let Some(child_pids) = self.children.get(pid) {
+                for cid in child_pids {
+                    let (c, r) = self.stat(cid);
+                    cpu += c;
+                    rss += r;
+                }
             }
         }
-        return (cpu, rss);
+        (cpu, rss)
     }
 }

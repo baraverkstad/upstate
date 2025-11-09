@@ -16,7 +16,7 @@ pub struct ConfigItem {
 impl ConfigItem {
     pub fn matches(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
         let mut found = vec![];
-        let cmd = self.command.as_ref().or(Some(&self.name)).unwrap();
+        let cmd = self.command.as_ref().unwrap_or(&self.name);
         let m1 = self
             .pidfile
             .as_ref()
@@ -25,11 +25,11 @@ impl ConfigItem {
             .and_then(|p| procs.service_by_pid(&p));
         let mut m2 = procs.services_by_cmd(cmd);
         m2.sort();
-        if m1.is_some() {
-            found.push((&self.name, m1.unwrap(), String::from("")));
-        } else if m2.len() == 0 && self.required {
+        if let Some(m1) = m1 {
+            found.push((&self.name, m1, String::from("")));
+        } else if m2.is_empty() && self.required {
             found.push((&self.name, 0, String::from("service not running")));
-        } else if m2.len() > 0 {
+        } else if !m2.is_empty() {
             let mut msg = String::from("");
             if self.pidfile.is_some() {
                 msg = format!("invalid PID file {}", self.pidfile.as_ref().unwrap());
@@ -40,7 +40,7 @@ impl ConfigItem {
                 found.push((&self.name, pid, msg.clone()));
             }
         }
-        return found;
+        found
     }
 }
 
@@ -56,23 +56,23 @@ impl Config {
                 let pidfile = parts.next().map(|s| s.to_string()).filter(|s| s != "-");
                 let cmd = parts.collect::<Vec<&str>>().join(" ");
                 if !title.is_empty() && !title.starts_with("#") {
-                    let name = title.trim_start_matches(&['-', '+', '*']).to_string();
-                    let required = !title.starts_with(&['-', '*']);
-                    let multiple = title.starts_with(&['+', '*']);
-                    let command = (cmd.len() > 0).then(|| cmd);
+                    let name = title.trim_start_matches(['-', '+', '*']).to_string();
+                    let required = !title.starts_with(['-', '*']);
+                    let multiple = title.starts_with(['+', '*']);
+                    let command = (!cmd.is_empty()).then_some(cmd);
                     items.push(ConfigItem { name, required, multiple, pidfile, command });
                 }
             }
         }
-        return Ok(Config(items));
+        Ok(Config(items))
     }
 
     pub fn empty() -> Config {
-        return Config(vec![]);
+        Config(vec![])
     }
 
     pub fn all(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
-        return self.0.iter().flat_map(|item| item.matches(&procs)).collect();
+        self.0.iter().flat_map(|item| item.matches(procs)).collect()
     }
 }
 
@@ -94,21 +94,25 @@ fn locate() -> Result<Vec<PathBuf>, Error> {
     let alt1 = env::current_exe()?;
     let alt2 = env::current_dir()?;
     for dir in alt1.ancestors().skip(1).chain(alt2.ancestors()) {
-        let mut path;
-        if (path = dir.join("upstate.conf")) == () && path.is_file() {
+        let path = dir.join("upstate.conf");
+        if path.is_file() {
             return Ok(vec![path]);
-        } else if (path = dir.join("etc/upstate.conf")) == () && path.is_file() {
+        }
+        let path = dir.join("etc/upstate.conf");
+        if path.is_file() {
             return Ok(vec![path]);
-        } else if (path = dir.join("etc/upstate.conf.d")) == () && path.is_dir() {
+        }
+        let path = dir.join("etc/upstate.conf.d");
+        if path.is_dir() {
             return locate_files(path);
         }
     }
-    return Err(missing("no upstate.conf file found"));
+    Err(missing("no upstate.conf file found"))
 }
 
 fn locate_files(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
     let paths = path.read_dir()?.filter_map(|e| e.ok()).map(|e| e.path());
     let mut files: Vec<_> = paths.filter(|p| p.is_file()).collect();
     files.sort();
-    return Ok(files);
+    Ok(files)
 }

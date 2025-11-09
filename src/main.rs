@@ -1,5 +1,5 @@
 use colored::Colorize;
-use humansize::{BINARY, FormatSizeOptions, format_size};
+use humansize::{format_size, FormatSizeOptions, BINARY};
 use indoc::indoc;
 use std::collections;
 use std::fmt::Display;
@@ -53,12 +53,7 @@ fn main() {
                 process::exit(0);
             }
             "--version" => {
-                eprintln!(
-                    "Upstate ({}, {}, @{})",
-                    env!("VERSION"),
-                    env!("DATE"),
-                    env!("COMMIT")
-                );
+                eprintln!("Upstate ({}, {}, @{})", env!("VERSION"), env!("DATE"), env!("COMMIT"));
                 eprintln!("# Server metrics for man & machine. See --help for details.");
                 process::exit(0);
             }
@@ -78,7 +73,7 @@ fn main() {
     if mode > 0 {
         let config = conf::Config::new().unwrap_or_else(|err| {
             warning(err);
-            return conf::Config::empty();
+            conf::Config::empty()
         });
         ret = procsummary(&sys, &mut fmt, &config, mode > 1);
     }
@@ -91,9 +86,9 @@ fn elapsed(secs: u64) -> String {
     let hours = mins / 60;
     let days = hours / 24;
     if days > 0 {
-        return format!("{} days", days);
+        format!("{} days", days)
     } else {
-        return format!("{:02}:{:02}:{:02}", hours, mins % 60, secs % 60);
+        format!("{:02}:{:02}:{:02}", hours, mins % 60, secs % 60)
     }
 }
 
@@ -103,7 +98,7 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
     let loadavg = System::load_average();
     let load = format!("{:.2}, {:.2}, {:.2}", loadavg.one, loadavg.five, loadavg.fifteen);
     let procs = sys.processes().len();
-    let detail = vec![
+    let detail = [
         format!("up {}", elapsed(uptime)),
         format!("{} processes", procs),
         format!("{} cores", cores),
@@ -159,7 +154,7 @@ fn storagesummary(fmt: &mut fmt::Format) {
         let avail = disk.available_space();
         let availpct = 100_f64 * avail as f64 / total as f64;
         let info = format!("{} ({:.1}%) free", format_size(avail, sizefmt), availpct);
-        let detail = vec![
+        let detail = [
             format!("{} used", format_size(total - avail, sizefmt)),
             format!("{} total", format_size(total, sizefmt)),
             format!("on {}", disk.mount_point().display()),
@@ -179,12 +174,12 @@ fn storagesummary(fmt: &mut fmt::Format) {
 fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bool) -> i32 {
     let now = time::SystemTime::now();
     let epoch = now.duration_since(time::UNIX_EPOCH).unwrap().as_secs();
-    let procs = proc::ProcessMap::new(&sys);
+    let procs = proc::ProcessMap::new(sys);
     let mut found = vec![];
     let mut errors = 0;
     fmt.json_open("services", true, true);
     for (title, pid, err) in conf.all(&procs) {
-        if pid <= 0 {
+        if pid == 0 {
             let name = format!("{} [{}]", title, "?");
             fmt.text_proc_err(name, err.clone());
             fmt.json_open("", false, false);
@@ -199,7 +194,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
             let uptime = epoch - proc.start_time();
             let (cputime, rssbytes) = procs.stat(&pid);
             procitem(fmt, pid, title, cputime, uptime, rssbytes, &err);
-            if err.len() > 0 {
+            if !err.is_empty() {
                 fmt.text_proc_more("Warning:", err);
             }
         }
@@ -209,7 +204,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
     for pid in services {
         if all && !found.contains(&pid) {
             let proc = sys.process(Pid::from_u32(pid)).unwrap();
-            if !proc.exe().is_some() && proc.memory() == 0 {
+            if proc.exe().is_none() && proc.memory() == 0 {
                 // Lets ignore kernel threads
                 continue;
             }
@@ -220,18 +215,18 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
         }
     }
     fmt.json_close(true);
-    return errors;
+    errors
 }
 
 fn procitem(fmt: &mut fmt::Format, pid: u32, name: &str, cpu: u64, up: u64, rss: u64, warn: &str) {
     let sizefmt = FormatSizeOptions::from(BINARY).decimal_places(1);
     let label = format!("{} [{}]", name, pid);
-    let detail = vec![
+    let detail = [
         format!("cpu {}", elapsed(cpu)),
         format!("up {}", elapsed(up)),
         format!("{} rss", format_size(rss, sizefmt)),
     ];
-    if warn.len() > 0 {
+    if !warn.is_empty() {
         fmt.text_proc_warn(label, detail.join(" \u{2219} "));
     } else {
         fmt.text_proc_ok(label, detail.join(" \u{2219} "));
@@ -242,7 +237,7 @@ fn procitem(fmt: &mut fmt::Format, pid: u32, name: &str, cpu: u64, up: u64, rss:
     fmt.json_key_val("cputime", cpu);
     fmt.json_key_val("uptime", up);
     fmt.json_key_val("rss", rss);
-    if warn.len() > 0 {
+    if !warn.is_empty() {
         fmt.json_key_str("warning", warn);
     }
     fmt.json_close(false);

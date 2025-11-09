@@ -8,7 +8,7 @@ pub enum Format {
 
 impl Format {
     pub fn json() -> Format {
-        return Format::Json { indent: 0, nl: true, sep: false };
+        Format::Json { indent: 0, nl: true, sep: false }
     }
 
     pub fn text_summary(&self, key: &str, value: &str, detail: &str) {
@@ -44,7 +44,7 @@ impl Format {
     pub fn json_open(&mut self, name: &str, array: bool, newline: bool) {
         if let Format::Json { indent, nl, sep } = *self {
             self.json_sep(sep, nl && indent > 0, !nl && indent > 0, indent);
-            if name.len() > 0 {
+            if !name.is_empty() {
                 print!("\"{name}\": ");
             }
             print!("{}", if array { "[" } else { "{" });
