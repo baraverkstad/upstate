@@ -48,10 +48,10 @@ impl ProcessMap {
         if self.is_service(pid) {
             return *pid;
         }
-        if let Some(ppid) = self.parents.get(pid) {
-            if self.is_service(ppid) {
-                return *ppid;
-            }
+        if let Some(ppid) = self.parents.get(pid)
+            && self.is_service(ppid)
+        {
+            return *ppid;
         }
         *pid
     }
