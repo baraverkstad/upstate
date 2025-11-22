@@ -32,7 +32,7 @@ impl ConfigItem {
         } else if !m2.is_empty() {
             let mut msg = String::from("");
             if self.pidfile.is_some() {
-                msg = format!("invalid PID file {}", self.pidfile.as_ref().unwrap());
+                msg = format!("invalid PID file {}", self.pidfile.as_deref().unwrap_or("?"));
             } else if m2.len() > 1 && !self.multiple {
                 msg = String::from("multiple matching processes");
             }

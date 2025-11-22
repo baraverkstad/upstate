@@ -173,7 +173,7 @@ fn storagesummary(fmt: &mut fmt::Format) {
 
 fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bool) -> i32 {
     let now = time::SystemTime::now();
-    let epoch = now.duration_since(time::UNIX_EPOCH).unwrap().as_secs();
+    let epoch = now.duration_since(time::UNIX_EPOCH).unwrap_or_default().as_secs();
     let procs = proc::ProcessMap::new(sys);
     let mut found = vec![];
     let mut errors = 0;
@@ -190,20 +190,23 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
             errors += 1;
         } else if !found.contains(&pid) {
             found.push(pid);
-            let proc = sys.process(Pid::from_u32(pid)).unwrap();
-            let uptime = epoch - proc.start_time();
-            let (cputime, rssbytes) = procs.stat(&pid);
-            procitem(fmt, pid, title, cputime, uptime, rssbytes, &err);
-            if !err.is_empty() {
-                fmt.text_proc_more("Warning:", err);
+            if let Some(proc) = sys.process(Pid::from_u32(pid)) {
+                let uptime = epoch - proc.start_time();
+                let (cputime, rssbytes) = procs.stat(&pid);
+                procitem(fmt, pid, title, cputime, uptime, rssbytes, &err);
+                if !err.is_empty() {
+                    fmt.text_proc_more("Warning:", err);
+                }
             }
         }
     }
     let mut services = procs.services();
     services.sort();
     for pid in services {
-        if all && !found.contains(&pid) {
-            let proc = sys.process(Pid::from_u32(pid)).unwrap();
+        if all
+            && !found.contains(&pid)
+            && let Some(proc) = sys.process(Pid::from_u32(pid))
+        {
             if proc.exe().is_none() && proc.memory() == 0 {
                 // Let's ignore kernel threads
                 continue;
@@ -211,7 +214,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
             let uptime = epoch - proc.start_time();
             let (cputime, rssbytes) = procs.stat(&pid);
             let warn = "service not listed in config";
-            procitem(fmt, pid, proc.name().to_str().unwrap(), cputime, uptime, rssbytes, warn);
+            procitem(fmt, pid, &proc.name().to_string_lossy(), cputime, uptime, rssbytes, warn);
         }
     }
     fmt.json_close(true);

@@ -59,7 +59,9 @@ impl ProcessMap {
     pub fn services(&self) -> Vec<u32> {
         let mut pids = vec![];
         for pid in &self.roots {
-            pids.extend(self.children.get(pid).unwrap());
+            if let Some(children) = self.children.get(pid) {
+                pids.extend(children);
+            }
         }
         pids
     }
@@ -69,8 +71,8 @@ impl ProcessMap {
     }
 
     pub fn services_by_cmd(&self, cmd: &str) -> Vec<u32> {
-        let re = RegexBuilder::new(cmd).case_insensitive(true).build().unwrap();
-        let is_match = |s: &String| s.contains(cmd) || re.is_match(s);
+        let re = RegexBuilder::new(cmd).case_insensitive(true).build();
+        let is_match = |s: &String| s.contains(cmd) || re.as_ref().is_ok_and(|r| r.is_match(s));
         self.info
             .iter()
             .filter(|(_, v)| is_match(&v.cmd))
