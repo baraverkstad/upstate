@@ -87,7 +87,7 @@ may match multiple processes. These are omitted in `--limited` report
 and always ignored if missing.
 
 A pid file specified as `-` forces process lookup by either name or
-command-line match. Process lookup is also made in similar way if the pid
+command-line match. Process lookup is also made in a similar way if the pid
 file didn't exist or didn't match a running process.
 
 

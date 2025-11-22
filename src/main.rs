@@ -205,7 +205,7 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
         if all && !found.contains(&pid) {
             let proc = sys.process(Pid::from_u32(pid)).unwrap();
             if proc.exe().is_none() && proc.memory() == 0 {
-                // Lets ignore kernel threads
+                // Let's ignore kernel threads
                 continue;
             }
             let uptime = epoch - proc.start_time();
