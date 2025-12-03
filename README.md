@@ -19,10 +19,13 @@ for the existence of a number of configured processes. A short output example:
     Syntax: upstate [options]
 
     Options:
-      --summary     Report only a short machine status summary.
-      --limited     Report excludes optional/hidden processes.
-      --complete    Report includes all processes (default).
-      --json        Prints the report in JSON output format.
+      --no-summary  Exclude machine status from output.
+      --no-services Exclude services list from output.
+      --limited     Include machine status and configured services.
+      --complete    Include machine status and all services (default).
+      --sort=<key>  Sort services by cpu, rss, or uptime.
+      --limit=<n>   Limit the number of services shown.
+      --json        Print the report in JSON output format.
 
     Returns:
       Non-zero if one or more configured services weren't found.

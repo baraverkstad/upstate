@@ -11,6 +11,23 @@ mod conf;
 mod fmt;
 mod proc;
 
+#[derive(PartialEq)]
+enum SortBy {
+    Cpu,
+    Rss,
+    Uptime,
+}
+
+struct ProcItem {
+    pid: u32,
+    name: String,
+    cpu: u64,
+    rss: u64,
+    uptime: u64,
+    warn: bool,
+    msg: String,
+}
+
 fn error<T: Display>(msg: T) {
     eprintln!("\n{}: {}", "ERROR".red(), msg);
 }
@@ -30,7 +47,9 @@ fn usage() {
           --no-services Exclude services list from output.
           --limited     Include machine status and configured services.
           --complete    Include machine status and all services (default).
-          --json        Output report in JSON format.
+          --sort=<key>  Sort services by cpu, rss, or uptime.
+          --limit=<n>   Limit the number of services shown.
+          --json        Print the report in JSON output format.
 
         Returns:
           Non-zero if one or more configured services were missing.
@@ -44,6 +63,8 @@ fn main() {
     let mut summary = true;
     let mut mode = 2;
     let mut fmt = fmt::Format::Text;
+    let mut sort = None;
+    let mut limit = None;
     for arg in std::env::args().skip(1) {
         match arg.as_str() {
             "--no-summary" => summary = false,
@@ -59,6 +80,26 @@ fn main() {
                 eprintln!("Upstate ({}, {}, @{})", env!("VERSION"), env!("DATE"), env!("COMMIT"));
                 eprintln!("# Server metrics for man & machine. See --help for details.");
                 process::exit(0);
+            }
+            s if s.starts_with("--sort=") => {
+                sort = match s.trim_start_matches("--sort=") {
+                    "cpu" => Some(SortBy::Cpu),
+                    "rss" | "mem" => Some(SortBy::Rss),
+                    "time" | "uptime" => Some(SortBy::Uptime),
+                    _ => {
+                        error(format!("invalid sort option: {}", s));
+                        process::exit(1);
+                    }
+                };
+            }
+            s if s.starts_with("--limit=") => {
+                limit = match s.trim_start_matches("--limit=").parse() {
+                    Ok(n) => Some(n),
+                    Err(_) => {
+                        error(format!("invalid limit option: {}", s));
+                        process::exit(1);
+                    }
+                };
             }
             unknown => {
                 usage();
@@ -80,7 +121,7 @@ fn main() {
             warning(err);
             conf::Config::empty()
         });
-        ret = procsummary(&sys, &mut fmt, &config, mode > 1);
+        ret = procsummary(&sys, &mut fmt, &config, mode > 1, sort, limit);
     }
     fmt.json_close(false);
     process::exit(ret);
@@ -176,35 +217,53 @@ fn storagesummary(fmt: &mut fmt::Format) {
     fmt.json_close(true);
 }
 
-fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bool) -> i32 {
+fn procsummary(
+    sys: &System,
+    fmt: &mut fmt::Format,
+    conf: &conf::Config,
+    all: bool,
+    sort: Option<SortBy>,
+    limit: Option<usize>,
+) -> i32 {
     let now = time::SystemTime::now();
     let epoch = now.duration_since(time::UNIX_EPOCH).unwrap_or_default().as_secs();
     let procs = proc::ProcessMap::new(sys);
     let mut found = vec![];
+    let mut items = vec![];
     let mut errors = 0;
-    fmt.json_open("services", true, true);
+
+    // Configured services
     for (title, pid, err) in conf.all(&procs) {
         if pid == 0 {
-            let name = format!("{} [{}]", title, "?");
-            fmt.text_proc_err(name, err.clone());
-            fmt.json_open("", false, false);
-            fmt.json_key_val("pid", 0);
-            fmt.json_key_str("name", title);
-            fmt.json_key_str("error", err);
-            fmt.json_close(false);
+            items.push(ProcItem {
+                pid: 0,
+                name: title.to_string(),
+                cpu: 0,
+                rss: 0,
+                uptime: 0,
+                warn: false,
+                msg: err,
+            });
             errors += 1;
         } else if !found.contains(&pid) {
             found.push(pid);
             if let Some(proc) = sys.process(Pid::from_u32(pid)) {
                 let uptime = epoch - proc.start_time();
                 let (cputime, rssbytes) = procs.stat(&pid);
-                procitem(fmt, pid, title, cputime, uptime, rssbytes, &err);
-                if !err.is_empty() {
-                    fmt.text_proc_more("Warning:", err);
-                }
+                items.push(ProcItem {
+                    pid,
+                    name: title.to_string(),
+                    cpu: cputime,
+                    rss: rssbytes,
+                    uptime,
+                    warn: !err.is_empty(),
+                    msg: err,
+                });
             }
         }
     }
+
+    // Other services
     let mut services = procs.services();
     services.sort();
     for pid in services {
@@ -218,35 +277,75 @@ fn procsummary(sys: &System, fmt: &mut fmt::Format, conf: &conf::Config, all: bo
             }
             let uptime = epoch - proc.start_time();
             let (cputime, rssbytes) = procs.stat(&pid);
-            let warn = "service not listed in config";
-            procitem(fmt, pid, &proc.name().to_string_lossy(), cputime, uptime, rssbytes, warn);
+            items.push(ProcItem {
+                pid,
+                name: proc.name().to_str().unwrap_or_default().to_string(),
+                cpu: cputime,
+                rss: rssbytes,
+                uptime,
+                warn: true,
+                msg: String::from(""),
+            });
         }
+    }
+
+    // Sort & print
+    if let Some(s) = sort {
+        items.sort_by(|a, b| match s {
+            SortBy::Cpu => b.cpu.cmp(&a.cpu),
+            SortBy::Rss => b.rss.cmp(&a.rss),
+            SortBy::Uptime => b.uptime.cmp(&a.uptime),
+        });
+    }
+    if let Some(n) = limit
+        && n < items.len()
+    {
+        items.truncate(n);
+    }
+
+    // Print
+    fmt.json_open("services", true, true);
+    for item in items {
+        printitem(fmt, item);
     }
     fmt.json_close(true);
     errors
 }
 
-fn procitem(fmt: &mut fmt::Format, pid: u32, name: &str, cpu: u64, up: u64, rss: u64, warn: &str) {
+fn printitem(fmt: &mut fmt::Format, item: ProcItem) {
     let sizefmt = FormatSizeOptions::from(BINARY).decimal_places(1);
-    let label = format!("{} [{}]", name, pid);
+    let label = format!("{} [{}]", item.name, item.pid);
     let detail = [
-        format!("cpu {}", elapsed(cpu)),
-        format!("up {}", elapsed(up)),
-        format!("{} rss", format_size(rss, sizefmt)),
+        format!("cpu {}", elapsed(item.cpu)),
+        format!("up {}", elapsed(item.uptime)),
+        format!("{} rss", format_size(item.rss, sizefmt)),
     ];
-    if !warn.is_empty() {
+    if item.pid == 0 {
+        fmt.text_proc_err(label, item.msg.clone());
+    } else if item.warn {
         fmt.text_proc_warn(label, detail.join(" \u{2219} "));
+        if !item.msg.is_empty() {
+            fmt.text_proc_more("Warning:", item.msg.clone());
+        }
     } else {
         fmt.text_proc_ok(label, detail.join(" \u{2219} "));
     }
     fmt.json_open("", false, false);
-    fmt.json_key_val("pid", pid);
-    fmt.json_key_str("name", name);
-    fmt.json_key_val("cputime", cpu);
-    fmt.json_key_val("uptime", up);
-    fmt.json_key_val("rss", rss);
-    if !warn.is_empty() {
-        fmt.json_key_str("warning", warn);
+    fmt.json_key_val("pid", item.pid);
+    fmt.json_key_str("name", item.name);
+    if item.pid == 0 {
+        fmt.json_key_str("error", item.msg.clone());
+    } else {
+        fmt.json_key_val("cputime", item.cpu);
+        fmt.json_key_val("uptime", item.uptime);
+        fmt.json_key_val("rss", item.rss);
+    }
+    if item.warn {
+        if item.msg.is_empty() {
+            fmt.json_key_str("warning", "not listed in config");
+        } else {
+            fmt.json_key_str("warning", item.msg);
+        }
     }
     fmt.json_close(false);
 }

@@ -37,7 +37,7 @@ impl Format {
 
     pub fn text_proc_more(&self, label: &str, message: String) {
         if let Format::Text = *self {
-            println!("  {}: {}", label.yellow(), message);
+            println!("  {} {}", label.yellow(), message);
         }
     }
 
