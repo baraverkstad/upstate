@@ -27,6 +27,7 @@ fn usage() {
 
         Options:
           --summary     Include only a short machine status.
+          --no-summary  Exclude machine status, show only services.
           --limited     Include machine status and configured services.
           --complete    Include machine status and all services (default).
           --json        Output report in JSON format.
@@ -40,11 +41,13 @@ fn usage() {
 }
 
 fn main() {
+    let mut summary = true;
     let mut mode = 2;
     let mut fmt = fmt::Format::Text;
     for arg in std::env::args().skip(1) {
         match arg.as_str() {
             "--summary" => mode = 0,
+            "--no-summary" => summary = false,
             "--limited" => mode = 1,
             "--complete" => mode = 2,
             "--json" => fmt = fmt::Format::json(),
@@ -66,9 +69,11 @@ fn main() {
     }
     let sys = System::new_all();
     fmt.json_open("", false, true);
-    cpusummary(&sys, &mut fmt);
-    memsummary(&sys, &mut fmt);
-    storagesummary(&mut fmt);
+    if summary {
+        cpusummary(&sys, &mut fmt);
+        memsummary(&sys, &mut fmt);
+        storagesummary(&mut fmt);
+    }
     let mut ret = 0;
     if mode > 0 {
         let config = conf::Config::new().unwrap_or_else(|err| {
