@@ -18,8 +18,8 @@ clean:
     rm -rf target upstate-*.zip
 
 # Run debug version
-run:
-    cargo run
+run +args='':
+    cargo run -- {{args}}
 
 # Build local binary
 build:
