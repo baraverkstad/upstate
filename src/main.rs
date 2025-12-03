@@ -26,8 +26,8 @@ fn usage() {
         Syntax: upstate [options]
 
         Options:
-          --summary     Include only a short machine status.
-          --no-summary  Exclude machine status, show only services.
+          --no-summary  Exclude machine status from output.
+          --no-services Exclude services list from output.
           --limited     Include machine status and configured services.
           --complete    Include machine status and all services (default).
           --json        Output report in JSON format.
@@ -46,8 +46,8 @@ fn main() {
     let mut fmt = fmt::Format::Text;
     for arg in std::env::args().skip(1) {
         match arg.as_str() {
-            "--summary" => mode = 0,
             "--no-summary" => summary = false,
+            "--no-services" => mode = 0,
             "--limited" => mode = 1,
             "--complete" => mode = 2,
             "--json" => fmt = fmt::Format::json(),

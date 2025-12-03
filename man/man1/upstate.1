@@ -26,17 +26,17 @@ existence of a number of configured processes. A short output example:
     * sshd [1975344]                     23 MB rss * up 108 days * cpu 00:00:00
 .fi
 .sp
-Information is read from the \fB/proc\fR filesystem or via the
-\fBdf\fR, \fBps\fR, \fBpgrep\fR or \fBpstree\fR utilities.
+Information is read from the \fB/proc\fR filesystem or similar for other
+operating systems.
 .SH "OPTIONS"
 .sp
-\fB--summary\fR
-.RS 4
-Report only a short machine status summary.
-.RE
 \fB--no-summary\fR
 .RS 4
-Report excludes machine status, show only services.
+Exclude machine status from output.
+.RE
+\fB--no-services\fR
+.RS 4
+Exclude services list from output.
 .RE
 \fB--limited\fR
 .RS 4
