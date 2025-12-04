@@ -1,6 +1,6 @@
 [package]
 name = "upstate"
-version = "2.2.0"
+version = "2.3.0"
 authors = ["Per Cederberg <cederberg@gmail.com>"]
 license = "MIT"
 description = "Server metrics for man & machine."
