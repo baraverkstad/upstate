@@ -19,7 +19,7 @@ all:
 	@echo
 	@echo '💡 Related commands'
 	@echo ' · rustup update          - Update Rust toolchain to latest version'
-	@echo ' · cargo update           - Update dependencies to latest version'
+	@echo ' · cargo update -v        - Update dependencies to latest version'
 
 # Cleanup intermediary files
 clean:
