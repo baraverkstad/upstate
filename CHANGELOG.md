@@ -7,7 +7,8 @@
 - Added `CHANGELOG.md` file
 
 ### Changed
-- Updated dependencies: `bitflags` v2.11, `colored` v3.1.1, `libc` v0.2.182, `libm` v0.2.16, `memchr` v2.8
+- Updated dependencies: `bitflags` v2.11, `colored` v3.1.1, `libc` v0.2.182, `libm` v0.2.16, `memchr` v2.8, `sysinfo` v0.38
+- Simplified dependency version constraints in `Cargo.toml`
 
 
 ## v2.3 - 2025-12-04
