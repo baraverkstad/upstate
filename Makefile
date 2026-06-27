@@ -66,3 +66,12 @@ test:
 test-fix:
 	cargo clippy --fix --allow-dirty --allow-staged
 	cargo fmt
+
+# Check for outdated dependencies and toolchain
+outdated:
+	@echo --== rust toolchain ==--
+	@echo "current: $$(rustc --version)"
+	@echo "latest:  $$(curl -sf https://raw.githubusercontent.com/rust-lang/rust/master/RELEASES.md | head -1)"
+	@echo
+	@echo --== rust dependencies ==--
+	cargo outdated
