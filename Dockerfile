@@ -1,4 +1,4 @@
-FROM alpine:3.23 AS build
+FROM alpine:latest AS build
 ARG DATE
 ARG COMMIT
 ARG VERSION
@@ -11,7 +11,7 @@ ENV DATE=${DATE} COMMIT=${COMMIT} VERSION=${VERSION}
 RUN cd /build && \
     cargo build --release
 
-FROM alpine:3.23
+FROM alpine:latest
 RUN apk --no-cache upgrade && \
     apk --no-cache add libgcc
 COPY --from=build /build/target/release/upstate /usr/local/bin/upstate

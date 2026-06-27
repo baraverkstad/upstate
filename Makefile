@@ -1,10 +1,10 @@
 export DATE    := $(shell date '+%F')
 export COMMIT  := $(shell GIT_CONFIG_GLOBAL=/dev/null git rev-parse --short=8 HEAD)
 export VERSION := latest
+export DOCKER := $(shell command -v container || command -v docker || echo 'docker')
 
-define CROSSBUILD
-	@printf "\n### Cross-compiling %s (%s)\n" "$(strip $2)" "$(strip $3)"
-	cross build --release --target $(strip $1)
+define PKGBUILD
+	@printf "\n### Packaging %s (%s)\n" "$(strip $2)" "$(strip $3)"
 	cp target/$(strip $1)/release/upstate bin/upstate
 	zip -rq9 upstate-$(strip $2).zip README.md LICENSE install.sh bin/ etc/ man/ --exclude bin/upstate.sh
 	rm bin/upstate
@@ -35,16 +35,22 @@ build:
 
 # Build multi-architecture binaries
 build-cross:
-	$(call CROSSBUILD, arm-unknown-linux-gnueabihf,   linux-armv6-gnu,  Raspberry Pi 0/1)
-	$(call CROSSBUILD, armv7-unknown-linux-gnueabihf, linux-armv7-gnu,  Raspberry Pi 2/3)
-	$(call CROSSBUILD, aarch64-unknown-linux-gnu,     linux-arm64-gnu,  ARMv8/GNU libc)
-	$(call CROSSBUILD, aarch64-unknown-linux-musl,    linux-arm64-musl, ARMv8/musl)
-	$(call CROSSBUILD, x86_64-unknown-linux-gnu,      linux-amd64-gnu,  x86-64/GNU libc)
-	$(call CROSSBUILD, x86_64-unknown-linux-musl,     linux-amd64-musl, x86-64/musl)
+	$(DOCKER) build -f cross-build/Dockerfile \
+		--build-arg DATE=$(DATE) \
+		--build-arg COMMIT=$(COMMIT) \
+		--build-arg VERSION=$(VERSION) \
+		-t upstate-cross-build .
+	$(DOCKER) run --rm -v $(PWD):/workspace upstate-cross-build
+	$(call PKGBUILD, arm-unknown-linux-gnueabihf,   linux-armv6-gnu,  Raspberry Pi 0/1)
+	$(call PKGBUILD, armv7-unknown-linux-gnueabihf, linux-armv7-gnu,  Raspberry Pi 2/3)
+	$(call PKGBUILD, aarch64-unknown-linux-gnu,     linux-arm64-gnu,  ARMv8/GNU libc)
+	$(call PKGBUILD, aarch64-unknown-linux-musl,    linux-arm64-musl, ARMv8/musl)
+	$(call PKGBUILD, x86_64-unknown-linux-gnu,      linux-amd64-gnu,  x86-64/GNU libc)
+	$(call PKGBUILD, x86_64-unknown-linux-musl,     linux-amd64-musl, x86-64/musl)
 
 # Build Docker image
 build-docker:
-	docker build . \
+	$(DOCKER) build . \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION)
