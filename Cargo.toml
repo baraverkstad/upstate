@@ -16,7 +16,7 @@ colored = "3"
 humansize = "2"
 indoc = "2"
 regex = "1"
-sysinfo = "0.38"
+sysinfo = "0"
 
 [profile.release]
 opt-level = 'z'     # Optimize for size
