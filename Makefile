@@ -35,7 +35,7 @@ build:
 
 # Build multi-architecture binaries
 build-cross:
-	$(DOCKER) build -f cross-build/Dockerfile \
+	$(DOCKER) build --pull -f cross-build/Dockerfile \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION) \
@@ -50,13 +50,13 @@ build-cross:
 
 # Build Docker image
 build-docker:
-	$(DOCKER) build . \
+	$(DOCKER) build --pull . \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION)
 
 build-docker-release:
-	docker buildx build . \
+	docker buildx build --pull . \
 		--build-arg DATE=$(DATE) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg VERSION=$(VERSION) \
