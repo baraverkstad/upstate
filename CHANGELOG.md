@@ -1,98 +1,54 @@
 # Changelog
 
+_Lists all notable user-visible changes to this project._
+
 
 ## Unreleased
 
-### Added
-- Support for TOML configuration files (`upstate.toml`, `upstate.toml.d/`)
-
+- Added support for TOML config files (`upstate.toml`, `upstate.toml.d/`)
 
 ## v2.3 - 2025-12-04
 
-### Added
-- `--no-summary` option to omit the system summary
-- `--no-services` option to omit services section
-- `--sort=<key>` option to sort services
-- `--limit=<n>` option to limit number of services
-- `justfile` as an alternative to `make` for build commands
-
-### Changed
-- Updated Docker base image to Alpine Linux 3.23
-- Updated Rust edition from 2021 to 2024
-- Adjusted `--version` output format
-
-### Removed
-- `--summary` command-line option (use `--no-services` instead)
-- Configuration and man page files from Docker image
-
-### Fixed
-- Panic on macOS due to reported memory sizes
-- Various code style issues flagged by Clippy
-
+- Added `--no-summary` option to omit the system summary
+- Added `--no-services` option to omit services section
+- Added `--sort=<key>` option to sort services
+- Added `--limit=<n>` option to limit number of services
+- Changed `--version` output format
+- Removed `--summary` command-line option (use `--no-services` instead)
+- Removed configuration and man page files from Docker image
+- Fixed panic on macOS due to reported memory sizes
 
 ## v2.2 - 2025-05-11
 
-### Added
-- Support for `upstate.conf.d` directory with part files
-
-### Changed
-- Updated Docker base image to Alpine Linux 3.21
-- Updated dependencies: `colored` v3.0, `regex` v1.11, `sysinfo` v0.35, `procfs` v0.17
-
-### Removed
-- `upstate.sh` shell script from the install script
-- Publishing of pre-built Docker images
-
-### Fixed
-- `make test` now properly checks all shell files
-
+- Added support for `upstate.conf.d` directory with part files
+- Removed `upstate.sh` shell script from the install script
 
 ## v2.1 - 2024-08-05
 
-### Added
-- Support for prefixing process names with `+` and `*` (in addition to `-`)
-- Check to avoid listing the same process ID multiple times
-- Support for multiple service processes sharing the same name
-
-### Changed
-- Updated Docker base image to latest Alpine Linux
-- Process RSS and time calculations now use `sysinfo` more directly
-
-### Removed
-- Pre-built Docker images (due to multi-arch build times)
-
-### Fixed
-- Load average formatting to always show 2 decimal places
-- Various issues in `install.sh` script
-
+- Added support for prefixing process names with `+` and `*`
+- Added check to avoid listing the same process ID multiple times
+- Added support for multiple service processes sharing the same name
+- Changed process RSS and time calculations now use `sysinfo` more directly
+- Removed some Docker image platforms (due to multi-arch build times)
+- Fixed load average formatting to always show 2 decimal places
+- Fixed various issues in `install.sh` script
 
 ## v2.0 - 2023-10-13
 
-### Added
-- Complete rewrite in Rust, replacing the original Bash shell script
-- Binary downloads for most common Linux machines and Docker hosts
-- GitHub Actions workflow for automatic builds and Docker image publishing
-- Docker image for `linux/arm/v6` platform
-
-### Changed
-- Binaries are (almost) static, requiring only `libgcc`
-- Migrated Docker image from Docker Hub to GitHub Container Registry
-- Updated `install.sh` to prefer binary installation when available
-- Adjusted output columns for process statistics
-
-### Removed
-- Runtime dependencies on `pstree`, `grep`, `bash`, and similar shell tools
-
-### Fixed
-- Trim PPID from `ps` output
-- Corrected `grep` switch for Perl-compatible regular expressions
-
+- Added binary downloads for most common Linux machines and Docker hosts
+- Added Docker image for `linux/arm/v6` platform
+- Changed implementation to Rust, replacing the Bash shell script
+- Changed binaries to (almost) static, requiring only `libgcc`
+- Changed Docker image from Docker Hub to GitHub Container Registry
+- Changed `install.sh` to prefer binary installation when available
+- Changed output columns for process statistics
+- Removed runtime dependencies on `pstree`, `grep`, `bash`, and similar
+- Fixed PPID trimming in `ps` output
+- Fixed `grep` switch for Perl-compatible regular expressions
 
 ## v1.0 - 2022-09-01
 
-### Added
 - Initial release of upstate
-- Shell script implementation monitoring Linux system and process metrics
-- Dockerfile for running upstate from a Docker container
-- `install.sh` script for remote installation via `curl`
-
+- Added shell script implementation monitoring Linux system and processes
+- Added Dockerfile for running upstate from a Docker container
+- Added `install.sh` script for remote installation via `curl`
