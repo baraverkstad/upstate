@@ -55,7 +55,10 @@ fn usage() {
           Non-zero if one or more configured services were missing.
 
         Files:
-          /etc/upstate.conf
+          etc/upstate.toml
+          etc/upstate.conf (legacy)
+          etc/upstate.toml.d/
+          etc/upstate.conf.d/ (legacy)
     "#});
 }
 
@@ -233,7 +236,7 @@ fn procsummary(
     let mut errors = 0;
 
     // Configured services
-    for (title, pid, err) in conf.all(&procs) {
+    for (title, pid, err) in conf.service_matches(&procs) {
         if pid == 0 {
             items.push(ProcItem {
                 pid: 0,

@@ -31,7 +31,10 @@ for the existence of a number of configured processes. A short output example:
       Non-zero if one or more configured services weren't found.
 
     Files:
-      /etc/upstate.conf
+      etc/upstate.toml
+      etc/upstate.conf (legacy)
+      etc/upstate.toml.d/
+      etc/upstate.conf.d/ (legacy)
 ```
 
 
@@ -47,30 +50,69 @@ As an alternative, the `./install.sh` script can also be run directly from an
 unpacked download directory.
 
 A third option is to manually copy the `upstate` binary, `man/man1/upstate.1` and
-`etc/upstate.conf` to their desired locations on the server.
+`etc/upstate.toml.d/` to their desired locations on the server.
 
 Finally, it is also possible to run as a Docker container with access to the host
 machine processes and PID files:
 
 ```
     docker run --rm --tty --pid host \
-        -v /etc/upstate.conf:/etc/upstate.conf:ro \
+        -v /etc/upstate.toml.d:/etc/upstate.toml.d:ro \
         -v /var/run:/var/run:ro \
         ghcr.io/baraverkstad/upstate:latest
 ```
 
 
-## Configuration
+## Configuration Files
 
-The processes to check are configured in a single `upstate.conf` file or an
-`upstate.conf.d` directory with partial config files. These files are located
+The processes to check are configured in a single `upstate.toml` file or an
+`upstate.toml.d` directory with partial config files. These files are located
 based on the binary location or the current working dir. As an alternative
 the `UPSTATE_CONF` environment variable may point to either a file or
 directory with configuration.
 
-The configuration files should contain one line per process. Comment or blank
-lines are ignored. Each line contains the process or service name, pid file
-and an optional command-line argument to match:
+The configuration search order is:
+
+1. `etc/upstate.toml`
+2. `etc/upstate.conf` (legacy format)
+3. `etc/upstate.toml.d/` (lexical order)
+4. `etc/upstate.conf.d/` (legacy format, lexical order)
+
+The first matching location is used — later locations are ignored. If both
+`etc/upstate.toml.d/` and `etc/upstate.conf.d/` exist, only the TOML directory
+is read.
+
+### Configuration Format
+
+The TOML configuration files use a `[[services]]` array of tables. Each service
+has a `name` and optionally a `pidfile`, `command`, `required`, or `multiple`
+field:
+
+```toml
+[[services]]
+name = "sshd"                  # service name (used in output)
+pidfile = "/var/run/sshd.pid"  # path to PID file (optional)
+
+[[services]]
+name = "cron"
+pidfile = "/var/run/crond.pid"
+required = false               # service is optional (default: true)
+
+[[services]]
+name = "my-service"
+command = "my-daemon --flag"   # match by command regex (optional)
+required = false               # service is optional
+multiple = true                # allow multiple matches (default: false)
+```
+
+Either `pidfile` or `command` may be omitted. If both are present, the PID
+file is checked first and the command is used as fallback.
+
+### Legacy Format
+
+The legacy configuration files should contain one line per process. Comment or
+blank lines are ignored. Each line contains the process or service name, pid
+file and an optional command-line argument to match:
 
 ```
     cron            /var/run/crond.pid

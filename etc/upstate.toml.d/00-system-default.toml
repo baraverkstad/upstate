@@ -1,0 +1,72 @@
+# Common system services
+
+[[services]]
+name = "sys/agetty"
+command = "/sbin/agetty"
+required = false
+multiple = true
+
+[[services]]
+name = "sys/cron"
+pidfile = "/var/run/crond.pid"
+required = false
+
+[[services]]
+name = "sys/dbus-daemon"
+command = "/usr/bin/dbus-daemon"
+required = false
+
+[[services]]
+name = "sys/dhcpcd"
+pidfile = "/var/run/dhcpcd.pid"
+required = false
+
+[[services]]
+name = "sys/networkd-disp"
+command = "networkd-dispatcher"
+required = false
+
+[[services]]
+name = "sys/rsyslog"
+command = "rsyslogd"
+required = false
+
+[[services]]
+name = "sys/systemd"
+command = "systemd --user"
+required = false
+
+[[services]]
+name = "sys/systemd-journal"
+command = "systemd-journal"
+required = false
+
+[[services]]
+name = "sys/systemd-logind"
+command = "systemd-logind"
+required = false
+
+[[services]]
+name = "sys/systemd-network"
+command = "systemd-network"
+required = false
+
+[[services]]
+name = "sys/systemd-resolve"
+command = "systemd-resolve"
+required = false
+
+[[services]]
+name = "sys/systemd-timesyncd"
+command = "systemd-timesyncd"
+required = false
+
+[[services]]
+name = "sys/systemd-udevd"
+command = "systemd-udevd"
+required = false
+
+[[services]]
+name = "sys/uuidd"
+command = "/usr/sbin/uuidd"
+required = false

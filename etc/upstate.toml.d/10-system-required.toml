@@ -1,0 +1,13 @@
+# Example required services
+
+[[services]]
+name = "sshd"
+pidfile = "/var/run/sshd.pid"
+
+[[services]]
+name = "nginx"
+pidfile = "/var/run/nginx.pid"
+
+[[services]]
+name = "mysql"
+pidfile = "/var/run/mysqld/mysqld.pid"

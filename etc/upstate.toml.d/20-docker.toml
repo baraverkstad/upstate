@@ -1,0 +1,11 @@
+# Example Docker services
+
+[[services]]
+name = "dockerd"
+pidfile = "/var/run/docker.pid"
+required = false
+
+[[services]]
+name = "containerd"
+command = "^/usr/bin/containerd$"
+required = false

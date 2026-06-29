@@ -16,7 +16,9 @@ colored = "3"
 humansize = "2"
 indoc = "2"
 regex = "1"
+serde = { version = "1", features = ["derive"] }
 sysinfo = "0"
+toml = "1"
 
 [profile.release]
 opt-level = 'z'     # Optimize for size

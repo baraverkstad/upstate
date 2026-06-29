@@ -1,0 +1,9 @@
+# Example local services
+
+[[services]]
+name = "caddy"
+command = "caddy"
+
+[[services]]
+name = "php"
+command = "php-fpm: master"

@@ -60,23 +60,59 @@ Prints the report in JSON output format.
 .RE
 .SH "CONFIGURATION"
 .sp
-The processes to check are configured in a single \fBupstate.conf\fR file or an
-\fBupstate.conf.d\fR directory with partial config files. These files are located
+The processes to check are configured in a single \fBupstate.toml\fR file or an
+\fBupstate.toml.d\fR directory with partial config files. These files are located
 based on the binary location or the current working dir. As an alternative
 the \fBUPSTATE_CONF\fR environment variable may point to either a file or
 directory with configuration.
-.sp
-The configuration files should contain one line per process. Comment or blank
-lines are ignored. Each line contains the process or service name, pid file
-and an optional command-line argument to match:
-.sp
+
+The configuration search order is:
+
+.nf
+    1. etc/upstate.toml
+    2. etc/upstate.conf  (legacy format)
+    3. etc/upstate.toml.d/  (lexical order)
+    4. etc/upstate.conf.d/  (legacy format, lexical order)
+.fi
+
+The first matching location is used. If both \fBetc/upstate.toml.d/\fR and
+\fBetc/upstate.conf.d/\fR exist, only the TOML directory is read.
+.SS "TOML Format"
+The TOML configuration files use a \fB[[services]]\fR array of tables. Each
+service has a \fBname\fR and optionally a \fBpidfile\fR, \fBcommand\fR,
+\fBrequired\fR, or \fBmultiple\fR field:
+
+.nf
+    [[services]]
+    name = "sshd"                  # service name (used in output)
+    pidfile = "/var/run/sshd.pid"  # path to PID file (optional)
+
+    [[services]]
+    name = "cron"
+    pidfile = "/var/run/crond.pid"
+    required = false               # service is optional (default: true)
+
+    [[services]]
+    name = "my-service"
+    command = "my-daemon --flag"   # match by command regex (optional)
+    required = false               # service is optional
+    multiple = true                # allow multiple matches (default: false)
+.fi
+
+Either \fBpidfile\fR or \fBcommand\fR may be omitted. If both are present,
+the PID file is checked first and the command is used as fallback.
+.SS "Legacy Format"
+The legacy configuration files should contain one line per process. Comment or
+blank lines are ignored. Each line contains the process or service name, pid
+file and an optional command-line argument to match:
+
 .nf
     cron            /var/run/crond.pid
     sshd            /var/run/sshd.pid
     local           - local-command-match
     -rsyslog        /var/run/rsyslogd.pid
 .fi
-.sp
+
 Processes with a leading \fB-\fR character in the name are optional. These
 are omitted in \fB--limited\fR report and always ignored if missing.
 
@@ -92,9 +128,21 @@ command-line match. Process lookup is also made in a similar way if the pid
 file didn't exist or didn't match a running process.
 .SH "FILES"
 .sp
+.B /etc/upstate.toml
+.RS 4
+Service configuration file in TOML format.
+.RE
 .B /etc/upstate.conf
 .RS 4
-Service configuration file with one line per service.
+Legacy service configuration file with one line per service.
+.RE
+.B /etc/upstate.toml.d/
+.RS 4
+Directory containing TOML service configuration files (lexical order).
+.RE
+.B /etc/upstate.conf.d/
+.RS 4
+Directory containing legacy service configuration files (lexical order).
 .RE
 .SH "SEE ALSO"
 .sp
