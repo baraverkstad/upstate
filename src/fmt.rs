@@ -3,12 +3,12 @@ use core::fmt::Display;
 
 pub enum Format {
     Text,
-    Json { indent: usize, nl: bool, sep: bool },
+    Json { sep: bool, depth: usize },
 }
 
 impl Format {
     pub fn json() -> Format {
-        Format::Json { indent: 0, nl: true, sep: false }
+        Format::Json { sep: false, depth: 0 }
     }
 
     pub fn text_summary(&self, key: &str, value: &str, detail: &str) {
@@ -41,55 +41,40 @@ impl Format {
         }
     }
 
-    pub fn json_open(&mut self, name: &str, array: bool, newline: bool) {
-        if let Format::Json { indent, nl, sep } = *self {
-            self.json_sep(sep, nl && indent > 0, !nl && indent > 0, indent);
+    pub fn json_open(&mut self, name: &str, array: bool, _newline: bool) {
+        if let Format::Json { sep, depth } = *self {
+            if sep {
+                print!(",");
+            }
             if !name.is_empty() {
-                print!("\"{name}\": ");
+                print!("\"{name}\":");
             }
             print!("{}", if array { "[" } else { "{" });
-        }
-        if let Format::Json { ref mut indent, ref mut nl, ref mut sep } = *self {
-            *indent += 2;
-            *nl = newline;
-            *sep = false;
+            *self = Format::Json { sep: false, depth: depth + 1 };
         }
     }
 
     pub fn json_close(&mut self, array: bool) {
-        if let Format::Json { indent, nl, .. } = *self {
-            self.json_sep(false, nl, !nl, indent - 2);
-            print!("{}", if array { "]" } else { "}" });
-        }
-        if let Format::Json { ref mut indent, ref mut nl, .. } = *self {
-            *indent -= 2;
-            *nl = true;
-            if *indent == 0 {
+        print!("{}", if array { "]" } else { "}" });
+        if let Format::Json { depth, .. } = *self {
+            *self = Format::Json { sep: true, depth: depth - 1 };
+            if depth == 1 {
                 println!();
             }
         }
     }
 
     pub fn json_key_val<T: Display>(&mut self, key: &str, value: T) {
-        if let Format::Json { indent, nl, sep, .. } = *self {
-            self.json_sep(sep, nl, !nl, indent);
-            print!("\"{key}\": {value}");
-        }
-        if let Format::Json { ref mut sep, .. } = *self {
-            *sep = true;
+        if let Format::Json { sep, depth } = *self {
+            if sep {
+                print!(",");
+            }
+            print!("\"{key}\":{value}");
+            *self = Format::Json { sep: true, depth };
         }
     }
 
     pub fn json_key_str<T: Display>(&mut self, key: &str, value: T) {
         self.json_key_val(key, format!("\"{}\"", value));
-    }
-
-    fn json_sep(&self, sep: bool, nl: bool, sp: bool, indent: usize) {
-        print!("{}", if sep { "," } else { "" });
-        if nl {
-            print!("\n{:indent$}", "");
-        } else if sp {
-            print!(" ");
-        }
     }
 }
