@@ -7,6 +7,29 @@ use serde::Deserialize;
 
 use crate::proc::ProcessMap;
 
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SortBy {
+    Cpu,
+    Rss,
+    Uptime,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SummaryDisplay {
+    None,
+    All,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ServiceDisplay {
+    None,
+    Required,
+    All,
+}
+
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Service {
     name: String,
@@ -16,10 +39,6 @@ pub struct Service {
     multiple: bool,
     pidfile: Option<String>,
     command: Option<String>,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 impl Service {
@@ -55,8 +74,18 @@ impl Service {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_format")]
+    pub format: String,
+    #[serde(default = "default_summary_display")]
+    pub display_summary: SummaryDisplay,
+    #[serde(default = "default_service_display")]
+    pub display_services: ServiceDisplay,
     #[serde(default)]
-    services: Vec<Service>,
+    pub sort: Option<SortBy>,
+    #[serde(default)]
+    pub limit: Option<usize>,
+    #[serde(default)]
+    pub services: Vec<Service>,
 }
 
 impl Config {
@@ -73,12 +102,35 @@ impl Config {
     }
 
     pub fn empty() -> Config {
-        Config { services: vec![] }
+        Config {
+            format: default_format(),
+            display_summary: SummaryDisplay::All,
+            display_services: ServiceDisplay::All,
+            sort: None,
+            limit: None,
+            services: vec![],
+        }
     }
 
     pub fn service_matches(&self, procs: &ProcessMap) -> Vec<(&String, u32, String)> {
         self.services.iter().flat_map(|item| item.matches(procs)).collect()
     }
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_format() -> String {
+    String::from("text")
+}
+
+fn default_summary_display() -> SummaryDisplay {
+    SummaryDisplay::All
+}
+
+fn default_service_display() -> ServiceDisplay {
+    ServiceDisplay::All
 }
 
 fn parse_legacy(path: &Path) -> Result<Vec<Service>, Error> {
@@ -207,5 +259,36 @@ mod tests {
         let legacy_items = parse_legacy_path(&legacy);
         let toml_items = parse_toml_path(&toml);
         assert_eq!(legacy_items, toml_items, "90-local mapping mismatch");
+    }
+
+    #[test]
+    fn test_global_defaults() {
+        let path = etc_dir().join("upstate.toml.d/00-system-default.toml");
+        let config = parse_toml(&path).unwrap();
+        assert_eq!(config.format, "text");
+        assert_eq!(config.display_summary, SummaryDisplay::All);
+        assert_eq!(config.display_services, ServiceDisplay::All);
+        assert_eq!(config.sort, None);
+        assert_eq!(config.limit, None);
+    }
+
+    #[test]
+    fn test_global_custom() {
+        let toml = r#"
+format = "json"
+display_summary = "none"
+display_services = "required"
+sort = "rss"
+limit = 10
+
+[[services]]
+name = "test"
+"#;
+        let config: Config = toml::from_str(toml).unwrap();
+        assert_eq!(config.format, "json");
+        assert_eq!(config.display_summary, SummaryDisplay::None);
+        assert_eq!(config.display_services, ServiceDisplay::Required);
+        assert_eq!(config.sort, Some(SortBy::Rss));
+        assert_eq!(config.limit, Some(10));
     }
 }

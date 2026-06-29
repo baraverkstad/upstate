@@ -2,10 +2,10 @@
 
 _Lists all notable user-visible changes to this project._
 
-
 ## Unreleased
 
 - Added support for TOML config files (`upstate.toml`, `upstate.toml.d/`)
+- Added global config for `format`, `sort`, `limit`, etc.
 - Changed `--json` output to minified format for .jsonl compatibility
 
 ## v2.3 - 2025-12-04

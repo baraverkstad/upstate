@@ -84,9 +84,23 @@ is read.
 
 ### Configuration Format
 
-The TOML configuration files use a `[[services]]` array of tables. Each service
-has a `name` and optionally a `pidfile`, `command`, `required`, or `multiple`
-field:
+The TOML configuration files support a `[global]` section for default settings
+and a `[[services]]` array of tables for service definitions.
+
+The `[global]` section configures default behavior and can be overridden via
+command-line options. All fields are optional:
+
+```toml
+[global]
+format = "text"                # output format: text or json (default: text)
+display_summary = "all"        # show machine status: none or all (default: all)
+display_services = "all"       # show services: none, required, or all (default: all)
+sort = "cpu"                   # sort services by: cpu, rss, or uptime (default: none)
+limit = 20                     # max number of services shown (default: unlimited)
+```
+
+Each service has a `name` and optionally a `pidfile`, `command`, `required`, or
+`multiple` field:
 
 ```toml
 [[services]]
@@ -138,8 +152,8 @@ file didn't exist or didn't match a running process.
 
 ## See Also
 
-* [df](http://manpages.ubuntu.com/manpages/man1/df.1.html)
-* [pgrep](http://manpages.ubuntu.com/manpages/man1/pgrep.1.html)
-* [ps](http://manpages.ubuntu.com/manpages/man1/ps.1.html)
-* [pstree](http://manpages.ubuntu.com/manpages/man1/pstree.1.html)
-* [proc](http://manpages.ubuntu.com/manpages/man5/proc.5.html)
+- [df](http://manpages.ubuntu.com/manpages/man1/df.1.html)
+- [pgrep](http://manpages.ubuntu.com/manpages/man1/pgrep.1.html)
+- [ps](http://manpages.ubuntu.com/manpages/man1/ps.1.html)
+- [pstree](http://manpages.ubuntu.com/manpages/man1/pstree.1.html)
+- [proc](http://manpages.ubuntu.com/manpages/man5/proc.5.html)

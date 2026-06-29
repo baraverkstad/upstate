@@ -64,10 +64,11 @@ build-docker-release:
 		--tag ghcr.io/baraverkstad/upstate:$(VERSION) \
 		--push
 
-# Run code style checks
+# Run code test suite
 test:
 	cargo clippy
 	cargo fmt --check
+	cargo test
 
 test-fix:
 	cargo clippy --fix --allow-dirty --allow-staged

@@ -11,12 +11,7 @@ mod conf;
 mod fmt;
 mod proc;
 
-#[derive(PartialEq)]
-enum SortBy {
-    Cpu,
-    Rss,
-    Uptime,
-}
+use conf::SortBy;
 
 struct ProcItem {
     pid: u32,
@@ -63,17 +58,21 @@ fn usage() {
 }
 
 fn main() {
-    let mut summary = true;
-    let mut mode = 2;
-    let mut fmt = fmt::Format::Text;
-    let mut sort = None;
-    let mut limit = None;
+    let config = conf::Config::new().unwrap_or_else(|err| {
+        warning(err);
+        conf::Config::empty()
+    });
+    let mut summary = config.display_summary != conf::SummaryDisplay::None;
+    let mut services_mode = config.display_services;
+    let mut fmt = if config.format == "json" { fmt::Format::json() } else { fmt::Format::Text };
+    let mut sort = config.sort;
+    let mut limit = config.limit;
     for arg in std::env::args().skip(1) {
         match arg.as_str() {
             "--no-summary" => summary = false,
-            "--no-services" => mode = 0,
-            "--limited" => mode = 1,
-            "--complete" => mode = 2,
+            "--no-services" => services_mode = conf::ServiceDisplay::None,
+            "--limited" => services_mode = conf::ServiceDisplay::Required,
+            "--complete" => services_mode = conf::ServiceDisplay::All,
             "--json" => fmt = fmt::Format::json(),
             "--help" | "-h" | "-?" => {
                 usage();
@@ -86,9 +85,9 @@ fn main() {
             }
             s if s.starts_with("--sort=") => {
                 sort = match s.trim_start_matches("--sort=") {
-                    "cpu" => Some(SortBy::Cpu),
-                    "rss" | "mem" => Some(SortBy::Rss),
-                    "time" | "uptime" => Some(SortBy::Uptime),
+                    "cpu" => Some(conf::SortBy::Cpu),
+                    "rss" | "mem" => Some(conf::SortBy::Rss),
+                    "time" | "uptime" => Some(conf::SortBy::Uptime),
                     _ => {
                         error(format!("invalid sort option: {}", s));
                         process::exit(1);
@@ -119,12 +118,9 @@ fn main() {
         storagesummary(&mut fmt);
     }
     let mut ret = 0;
-    if mode > 0 {
-        let config = conf::Config::new().unwrap_or_else(|err| {
-            warning(err);
-            conf::Config::empty()
-        });
-        ret = procsummary(&sys, &mut fmt, &config, mode > 1, sort, limit);
+    if services_mode != conf::ServiceDisplay::None {
+        let show_all = services_mode == conf::ServiceDisplay::All;
+        ret = procsummary(&sys, &mut fmt, &config, show_all, sort, limit);
     }
     fmt.json_close(false);
     process::exit(ret);
