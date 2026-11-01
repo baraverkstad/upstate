@@ -14,6 +14,10 @@ pub struct Format<'a> {
 }
 
 impl<'a> Format<'a> {
+    pub fn is_json(&self) -> bool {
+        matches!(self.mode, Mode::Json { .. })
+    }
+
     pub fn text() -> Self {
         Self { mode: Mode::Text, output: Box::new(io::stdout()), json_buffer: Vec::new() }
     }
@@ -108,5 +112,13 @@ impl<'a> Format<'a> {
     pub fn json_key_str<T: Display>(&mut self, key: &str, value: T) {
         let value = serde_json::to_string(&value.to_string()).expect("failed encoding report string");
         self.json_key_val(key, value);
+    }
+
+    pub fn json_key_opt_str(&mut self, key: &str, value: Option<&str>) {
+        if let Some(value) = value {
+            self.json_key_str(key, value);
+        } else {
+            self.json_key_val(key, "null");
+        }
     }
 }

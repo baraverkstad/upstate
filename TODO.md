@@ -8,11 +8,10 @@ Keep Upstate small: collect an accurate, useful report quickly.
       Orb.
 - [x] Fix report output: escape JSON strings, keep JSON delimiters out of text,
       and avoid partial JSON when collection fails.
-- [ ] Extend `--json` with hostname, OS name/version, kernel version,
+- [x] Extend `--json` with hostname, OS name/version, kernel version,
       architecture, and collection timestamp.
-- [ ] Add logical CPU count, available memory, and total/free swap to `--json`.
-      Current fields already include physical cores (`cores`), free memory, and
-      used swap (`memory.swap`).
+- [ ] Consider adding available memory and total/free swap to `--json`. Current
+      fields already include free memory and used swap (`memory.swap`).
 - [ ] Clarify memory field names: machine `rss` currently means used memory.
 - [ ] Improve automatic service names using local cgroup metadata, including
       container IDs. Follow the [service-name plan](PLAN-auto-service-names.md),

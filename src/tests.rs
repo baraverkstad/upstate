@@ -168,3 +168,38 @@ fn failed_collection_does_not_publish_partial_json() {
     drop(format);
     assert!(output.is_empty());
 }
+
+#[test]
+fn collected_timestamp_is_rfc3339_utc() {
+    let value = collected_timestamp();
+    assert_eq!(value.len(), 20);
+    assert_eq!(&value[4..5], "-");
+    assert_eq!(&value[10..11], "T");
+    assert_eq!(&value[19..20], "Z");
+}
+
+#[test]
+fn civil_date_conversion_handles_epoch_and_leap_days() {
+    assert_eq!(civil_from_days(0), (1970, 1, 1));
+    assert_eq!(civil_from_days(11_016), (2000, 2, 29));
+    assert_eq!(civil_from_days(19_782), (2024, 2, 29));
+}
+
+#[test]
+fn machine_identity_has_expected_fields_and_nulls_are_valid_json() {
+    let mut output = Vec::new();
+    {
+        let mut format = fmt::Format::json().with_output(&mut output);
+        format.json_open("", false, true);
+        machine_identity(&mut format);
+        format.json_key_str("collected", collected_timestamp());
+        format.json_close(false);
+        format.finish();
+    }
+    let output = String::from_utf8(output).unwrap();
+    let value: Value = serde_json::from_str(&output).unwrap();
+    for key in ["hostname", "os", "kernel", "architecture", "collected"] {
+        assert!(value.get(key).is_some(), "missing {key}");
+    }
+    assert!(output.trim_end().ends_with("Z\"}"));
+}

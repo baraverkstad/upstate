@@ -18,7 +18,21 @@ fn run(config: &str, args: &[&str]) -> Output {
 fn json_output(output: &Output, code: i32) -> Value {
     assert_eq!(output.status.code(), Some(code), "{output:?}");
     assert!(output.stderr.is_empty(), "{output:?}");
-    serde_json::from_slice(&output.stdout).unwrap_or_else(|err| panic!("{err}: {output:?}"))
+    let mut value: Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|err| panic!("{err}: {output:?}"));
+    let collected = value
+        .as_object_mut()
+        .unwrap()
+        .remove("collected")
+        .expect("missing collected timestamp");
+    let timestamp = collected.as_str().unwrap();
+    assert_eq!(timestamp.len(), 20);
+    assert!(timestamp.ends_with('Z'));
+    assert!(
+        String::from_utf8_lossy(&output.stdout)
+            .trim_end()
+            .ends_with(&format!("\"collected\":\"{timestamp}\"}}"))
+    );
+    value
 }
 
 #[test]
@@ -98,6 +112,23 @@ fn last_service_display_flag_wins() {
 #[test]
 fn linux_smoke_collects_summary_and_discovers_services() {
     let output = run("empty.toml", &["--json", "--no-services"]);
+    let raw = std::str::from_utf8(&output.stdout).unwrap();
+    let fields = [
+        "hostname",
+        "os",
+        "kernel",
+        "architecture",
+        "cores",
+        "cpus",
+        "uptime",
+        "loadavg",
+        "processes",
+        "memory",
+        "storage",
+        "collected",
+    ];
+    let positions: Vec<_> = fields.iter().map(|field| raw.find(&format!("\"{field}\":")).unwrap()).collect();
+    assert!(positions.windows(2).all(|pair| pair[0] < pair[1]));
     let summary = json_output(&output, 0);
     assert!(summary["cores"].as_u64().unwrap() >= 1);
     assert!(summary["uptime"].is_u64());

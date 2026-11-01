@@ -119,6 +119,9 @@ fn main() -> Result<(), sysinfo::Error> {
     let ret = write_report(&mut fmt, |fmt| {
         fmt.json_open("", false, true);
         if summary {
+            if fmt.is_json() {
+                machine_identity(fmt);
+            }
             cpusummary(&sys, fmt)?;
             memsummary(&sys, fmt);
             storagesummary(fmt)?;
@@ -128,10 +131,58 @@ fn main() -> Result<(), sysinfo::Error> {
             let show_all = services_mode == conf::ServiceDisplay::All;
             ret = procsummary(&sys, fmt, &config, show_all, sort, limit);
         }
+        if fmt.is_json() {
+            fmt.json_key_str("collected", collected_timestamp());
+        }
         fmt.json_close(false);
         Ok::<_, sysinfo::Error>(ret)
     })?;
     process::exit(ret);
+}
+
+fn machine_identity(fmt: &mut fmt::Format) {
+    let hostname = System::host_name().ok();
+    fmt.json_key_opt_str("hostname", hostname.as_deref());
+    fmt.json_open("os", false, false);
+    let name = System::name().ok();
+    let version = System::os_version().ok();
+    fmt.json_key_opt_str("name", name.as_deref());
+    fmt.json_key_opt_str("version", version.as_deref());
+    fmt.json_close(false);
+    let kernel = System::kernel_version().ok();
+    fmt.json_key_opt_str("kernel", kernel.as_deref());
+    let architecture = System::cpu_arch();
+    fmt.json_key_opt_str("architecture", Some(&architecture));
+}
+
+fn collected_timestamp() -> String {
+    let seconds = time::SystemTime::now()
+        .duration_since(time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let days = (seconds / 86_400) as i64;
+    let day_seconds = seconds % 86_400;
+    let (year, month, day) = civil_from_days(days);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        day_seconds / 3600,
+        day_seconds / 60 % 60,
+        day_seconds % 60
+    )
+}
+
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let mut year = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = mp + if mp < 10 { 3 } else { -9 };
+    year += i64::from(month <= 2);
+    (year, month, day)
 }
 
 fn write_report<T, E>(fmt: &mut fmt::Format, collect: impl FnOnce(&mut fmt::Format) -> Result<T, E>) -> Result<T, E> {
@@ -164,6 +215,7 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) -> Result<(), sysinfo::Error>
     ];
     fmt.text_summary("loadavg:", &load, &detail.join(" \u{2219} "));
     fmt.json_key_val("cores", cores);
+    fmt.json_key_val("cpus", sys.cpus().len());
     fmt.json_key_val("uptime", uptime);
     fmt.json_key_val("loadavg", format!("[{}]", load));
     fmt.json_key_val("processes", procs);

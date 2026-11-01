@@ -5,6 +5,7 @@ _CLI for system metrics and service checks, with text and JSON output._
 ## File Reference
 
 - [README.md] — usage, installation and service configuration
+- [CHANGELOG.md] — notable user-visible changes
 - [TODO.md] — planned work and scope
 
 ## Command Reference

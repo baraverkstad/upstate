@@ -6,6 +6,8 @@ _Lists all notable user-visible changes to this project._
 
 - Added support for TOML config files (`upstate.toml`, `upstate.toml.d/`)
 - Added global config for `format`, `sort`, `limit`, etc.
+- Added `hostname`, `cpus`, `os`, `kernel`, `architecture` and `collected` to
+  JSON output
 - Changed `--json` output to minified format for .jsonl compatibility
 - Fixed JSON string escaping
 
