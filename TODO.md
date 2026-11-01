@@ -6,7 +6,7 @@ Keep Upstate small: collect an accurate, useful report quickly.
 - [x] Add a small report test harness: text/JSON fixtures, escaping, service
       matching and aggregation, CLI flags and exit codes; Linux smoke checks in
       Orb.
-- [ ] Fix report output: escape JSON strings, keep JSON delimiters out of text,
+- [x] Fix report output: escape JSON strings, keep JSON delimiters out of text,
       and avoid partial JSON when collection fails.
 - [ ] Extend `--json` with hostname, OS name/version, kernel version,
       architecture, and collection timestamp.

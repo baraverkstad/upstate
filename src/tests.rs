@@ -42,6 +42,7 @@ fn report(json: bool, items: Vec<ProcItem>, sort: Option<SortBy>, limit: Option<
         format.json_open("", false, true);
         printitems(&mut format, items, sort, limit);
         format.json_close(false);
+        format.finish();
     }
     String::from_utf8(output).unwrap()
 }
@@ -121,13 +122,11 @@ fn text_rows_fixture() {
 }
 
 #[test]
-#[ignore = "TODO: json_close currently writes delimiters in text mode"]
 fn text_report_has_no_json_delimiters() {
     assert_eq!(report(false, items(), None, None), include_str!("../tests/fixtures/report.txt"));
 }
 
 #[test]
-#[ignore = "TODO: JSON string values are not escaped"]
 fn json_report_escapes_service_strings() {
     let name = "worker \"quoted\" \\ path\n\t\r\u{0000} café";
     let warning = "PID file \"/run/a\\b\"\nmissing";
@@ -154,4 +153,18 @@ fn elapsed_formats_boundaries() {
     ] {
         assert_eq!(elapsed(seconds), expected);
     }
+}
+
+#[test]
+fn failed_collection_does_not_publish_partial_json() {
+    let mut output = Vec::new();
+    let mut format = fmt::Format::json().with_output(&mut output);
+    let result = write_report(&mut format, |format| {
+        format.json_open("", false, true);
+        format.json_key_val("cores", 4);
+        Err::<(), _>("collection failed")
+    });
+    assert_eq!(result, Err("collection failed"));
+    drop(format);
+    assert!(output.is_empty());
 }

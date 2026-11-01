@@ -116,19 +116,28 @@ fn main() -> Result<(), sysinfo::Error> {
     let refresh = RefreshKind::everything()
         .with_processes(ProcessRefreshKind::everything().without_gpu_usage().without_gpu_memory());
     let sys = System::new_with_specifics(refresh)?;
-    fmt.json_open("", false, true);
-    if summary {
-        cpusummary(&sys, &mut fmt)?;
-        memsummary(&sys, &mut fmt);
-        storagesummary(&mut fmt)?;
-    }
-    let mut ret = 0;
-    if services_mode != conf::ServiceDisplay::None {
-        let show_all = services_mode == conf::ServiceDisplay::All;
-        ret = procsummary(&sys, &mut fmt, &config, show_all, sort, limit);
-    }
-    fmt.json_close(false);
+    let ret = write_report(&mut fmt, |fmt| {
+        fmt.json_open("", false, true);
+        if summary {
+            cpusummary(&sys, fmt)?;
+            memsummary(&sys, fmt);
+            storagesummary(fmt)?;
+        }
+        let mut ret = 0;
+        if services_mode != conf::ServiceDisplay::None {
+            let show_all = services_mode == conf::ServiceDisplay::All;
+            ret = procsummary(&sys, fmt, &config, show_all, sort, limit);
+        }
+        fmt.json_close(false);
+        Ok::<_, sysinfo::Error>(ret)
+    })?;
     process::exit(ret);
+}
+
+fn write_report<T, E>(fmt: &mut fmt::Format, collect: impl FnOnce(&mut fmt::Format) -> Result<T, E>) -> Result<T, E> {
+    let result = collect(fmt)?;
+    fmt.finish();
+    Ok(result)
 }
 
 fn elapsed(secs: u64) -> String {

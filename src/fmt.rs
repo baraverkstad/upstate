@@ -10,21 +10,32 @@ enum Mode {
 pub struct Format<'a> {
     mode: Mode,
     output: Box<dyn Write + 'a>,
+    json_buffer: Vec<u8>,
 }
 
 impl<'a> Format<'a> {
     pub fn text() -> Self {
-        Self { mode: Mode::Text, output: Box::new(io::stdout()) }
+        Self { mode: Mode::Text, output: Box::new(io::stdout()), json_buffer: Vec::new() }
     }
 
     pub fn json() -> Self {
-        Self { mode: Mode::Json { sep: false, depth: 0 }, output: Box::new(io::stdout()) }
+        Self {
+            mode: Mode::Json { sep: false, depth: 0 },
+            output: Box::new(io::stdout()),
+            json_buffer: Vec::new(),
+        }
     }
 
     #[cfg(test)]
     pub fn with_output(mut self, output: impl Write + 'a) -> Self {
         self.output = Box::new(output);
         self
+    }
+
+    pub fn finish(&mut self) {
+        if let Mode::Json { .. } = self.mode {
+            self.output.write_all(&self.json_buffer).expect("failed writing report");
+        }
     }
 
     pub fn text_summary(&mut self, key: &str, value: &str, detail: &str) {
@@ -62,22 +73,23 @@ impl<'a> Format<'a> {
     pub fn json_open(&mut self, name: &str, array: bool, _newline: bool) {
         if let Mode::Json { sep, depth } = self.mode {
             if sep {
-                write!(self.output, ",").expect("failed writing report");
+                write!(self.json_buffer, ",").expect("failed writing report");
             }
             if !name.is_empty() {
-                write!(self.output, "\"{name}\":").expect("failed writing report");
+                serde_json::to_writer(&mut self.json_buffer, name).expect("failed writing report");
+                write!(self.json_buffer, ":").expect("failed writing report");
             }
-            write!(self.output, "{}", if array { "[" } else { "{" }).expect("failed writing report");
+            write!(self.json_buffer, "{}", if array { "[" } else { "{" }).expect("failed writing report");
             self.mode = Mode::Json { sep: false, depth: depth + 1 };
         }
     }
 
     pub fn json_close(&mut self, array: bool) {
-        write!(self.output, "{}", if array { "]" } else { "}" }).expect("failed writing report");
         if let Mode::Json { depth, .. } = self.mode {
+            write!(self.json_buffer, "{}", if array { "]" } else { "}" }).expect("failed writing report");
             self.mode = Mode::Json { sep: true, depth: depth - 1 };
             if depth == 1 {
-                writeln!(self.output,).expect("failed writing report");
+                writeln!(self.json_buffer).expect("failed writing report");
             }
         }
     }
@@ -85,14 +97,16 @@ impl<'a> Format<'a> {
     pub fn json_key_val<T: Display>(&mut self, key: &str, value: T) {
         if let Mode::Json { sep, depth } = self.mode {
             if sep {
-                write!(self.output, ",").expect("failed writing report");
+                write!(self.json_buffer, ",").expect("failed writing report");
             }
-            write!(self.output, "\"{key}\":{value}").expect("failed writing report");
+            serde_json::to_writer(&mut self.json_buffer, key).expect("failed writing report");
+            write!(self.json_buffer, ":{value}").expect("failed writing report");
             self.mode = Mode::Json { sep: true, depth };
         }
     }
 
     pub fn json_key_str<T: Display>(&mut self, key: &str, value: T) {
-        self.json_key_val(key, format!("\"{}\"", value));
+        let value = serde_json::to_string(&value.to_string()).expect("failed encoding report string");
+        self.json_key_val(key, value);
     }
 }

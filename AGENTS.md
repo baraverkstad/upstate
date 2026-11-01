@@ -6,7 +6,6 @@ _CLI for system metrics and service checks, with text and JSON output._
 
 - [README.md] — usage, installation and service configuration
 - [TODO.md] — planned work and scope
-- [tests/README.md] — test fixtures, CLI checks and known regressions
 
 ## Command Reference
 
