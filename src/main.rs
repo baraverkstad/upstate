@@ -151,7 +151,7 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
     fmt.text_summary("loadavg:", &load, &detail.join(" \u{2219} "));
     fmt.json_key_val("cores", cores);
     fmt.json_key_val("uptime", uptime);
-    fmt.json_key_val("loadavg", format!("[{}]", &load));
+    fmt.json_key_val("loadavg", format!("[{}]", load));
     fmt.json_key_val("processes", procs);
 }
 

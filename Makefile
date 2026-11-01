@@ -18,8 +18,9 @@ all:
 	@echo ' · make VERSION=v1.0 build-cross'
 	@echo
 	@echo '💡 Related commands'
-	@echo ' · rustup update          - Update Rust toolchain to latest version'
 	@echo ' · cargo update -v        - Update dependencies to latest version'
+	@echo ' · rustup update --no-self-update'
+	@echo '                          - Update Rust toolchain to latest version'
 
 # Cleanup intermediary files
 clean:
