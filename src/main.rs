@@ -57,7 +57,7 @@ fn usage() {
     "#});
 }
 
-fn main() {
+fn main() -> Result<(), sysinfo::Error> {
     let config = conf::Config::new().unwrap_or_else(|err| {
         warning(err);
         conf::Config::empty()
@@ -110,12 +110,14 @@ fn main() {
             }
         }
     }
-    let sys = System::new_all();
+    let refresh = RefreshKind::everything()
+        .with_processes(ProcessRefreshKind::everything().without_gpu_usage().without_gpu_memory());
+    let sys = System::new_with_specifics(refresh)?;
     fmt.json_open("", false, true);
     if summary {
-        cpusummary(&sys, &mut fmt);
+        cpusummary(&sys, &mut fmt)?;
         memsummary(&sys, &mut fmt);
-        storagesummary(&mut fmt);
+        storagesummary(&mut fmt)?;
     }
     let mut ret = 0;
     if services_mode != conf::ServiceDisplay::None {
@@ -137,10 +139,10 @@ fn elapsed(secs: u64) -> String {
     }
 }
 
-fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
+fn cpusummary(sys: &System, fmt: &mut fmt::Format) -> Result<(), sysinfo::Error> {
     let cores = System::physical_core_count().unwrap_or(1);
-    let uptime = System::uptime();
-    let loadavg = System::load_average();
+    let uptime = System::uptime()?;
+    let loadavg = System::load_average()?;
     let load = format!("{:.2}, {:.2}, {:.2}", loadavg.one, loadavg.five, loadavg.fifteen);
     let procs = sys.processes().len();
     let detail = [
@@ -153,6 +155,7 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) {
     fmt.json_key_val("uptime", uptime);
     fmt.json_key_val("loadavg", format!("[{}]", load));
     fmt.json_key_val("processes", procs);
+    Ok(())
 }
 
 fn memsummary(sys: &System, fmt: &mut fmt::Format) {
@@ -182,12 +185,12 @@ fn memsummary(sys: &System, fmt: &mut fmt::Format) {
     fmt.json_close(false);
 }
 
-fn storagesummary(fmt: &mut fmt::Format) {
+fn storagesummary(fmt: &mut fmt::Format) -> Result<(), sysinfo::Error> {
     let sizefmt = FormatSizeOptions::from(BINARY).decimal_places(1);
     let mut devices = collections::HashSet::new();
     fmt.json_open("storage", true, true);
-    let disks = Disks::new_with_refreshed_list();
-    for disk in disks.list() {
+    let disks = Disks::new_with_refreshed_list()?;
+    for disk in &disks {
         if let DiskKind::Unknown(_) = disk.kind() {
             continue;
         } else if devices.contains(disk.name()) {
@@ -214,6 +217,7 @@ fn storagesummary(fmt: &mut fmt::Format) {
         fmt.json_close(false);
     }
     fmt.json_close(true);
+    Ok(())
 }
 
 fn procsummary(
