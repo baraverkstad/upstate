@@ -1,0 +1,3 @@
+[[services]]
+name = "upstate-self"
+command = '(^|/)upstate --json --no-summary --limited$'

@@ -11,6 +11,9 @@ mod conf;
 mod fmt;
 mod proc;
 
+#[cfg(test)]
+mod tests;
+
 use conf::SortBy;
 
 struct ProcItem {
@@ -64,7 +67,7 @@ fn main() -> Result<(), sysinfo::Error> {
     });
     let mut summary = config.display_summary != conf::SummaryDisplay::None;
     let mut services_mode = config.display_services;
-    let mut fmt = if config.format == "json" { fmt::Format::json() } else { fmt::Format::Text };
+    let mut fmt = if config.format == "json" { fmt::Format::json() } else { fmt::Format::text() };
     let mut sort = config.sort;
     let mut limit = config.limit;
     for arg in std::env::args().skip(1) {
@@ -292,7 +295,11 @@ fn procsummary(
         }
     }
 
-    // Sort & print
+    printitems(fmt, items, sort, limit);
+    errors
+}
+
+fn printitems(fmt: &mut fmt::Format, mut items: Vec<ProcItem>, sort: Option<SortBy>, limit: Option<usize>) {
     if let Some(s) = sort {
         items.sort_by(|a, b| match s {
             SortBy::Cpu => b.cpu.cmp(&a.cpu),
@@ -312,7 +319,6 @@ fn procsummary(
         printitem(fmt, item);
     }
     fmt.json_close(true);
-    errors
 }
 
 fn printitem(fmt: &mut fmt::Format, item: ProcItem) {

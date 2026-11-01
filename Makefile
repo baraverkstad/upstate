@@ -67,7 +67,7 @@ build-docker-release:
 
 # Run code test suite
 test:
-	cargo clippy
+	cargo clippy --all-targets
 	cargo fmt --check
 	cargo test
 

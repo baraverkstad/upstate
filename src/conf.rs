@@ -212,6 +212,50 @@ fn locate_files(path: PathBuf) -> Result<Vec<PathBuf>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::proc::ProcessMap;
+    use std::fs::{OpenOptions, remove_file};
+    use std::io::Write;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEMP_ID: AtomicU64 = AtomicU64::new(0);
+
+    struct TempFile(PathBuf);
+
+    impl TempFile {
+        fn new(contents: &str) -> TempFile {
+            loop {
+                let id = TEMP_ID.fetch_add(1, Ordering::Relaxed);
+                let path = env::temp_dir().join(format!("upstate-conf-test-{}-{id}.pid", std::process::id()));
+                match OpenOptions::new().write(true).create_new(true).open(&path) {
+                    Ok(mut file) => {
+                        file.write_all(contents.as_bytes()).unwrap();
+                        return TempFile(path);
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                    Err(error) => panic!("failed to create test PID file: {error}"),
+                }
+            }
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            let _ = remove_file(&self.0);
+        }
+    }
+
+    fn process_fixture() -> ProcessMap {
+        ProcessMap::from_test_records(&[
+            (1, None, "init", 1, 10),
+            (2, Some(1), "worker primary", 2, 20),
+            (3, Some(2), "helper child", 3, 30),
+            (4, Some(1), "worker secondary", 4, 40),
+        ])
+    }
 
     fn etc_dir() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("etc")
@@ -290,5 +334,63 @@ name = "test"
         assert_eq!(config.display_services, ServiceDisplay::Required);
         assert_eq!(config.sort, Some(SortBy::Rss));
         assert_eq!(config.limit, Some(10));
+    }
+
+    #[test]
+    fn required_missing_service_is_reported_and_optional_missing_service_is_omitted() {
+        let processes = process_fixture();
+        let required: Service = toml::from_str("name = 'required'").unwrap();
+        let optional: Service = toml::from_str("name = 'optional'\nrequired = false").unwrap();
+
+        let required_matches = required.matches(&processes);
+        assert_eq!(required_matches.len(), 1);
+        assert_eq!(required_matches[0].1, 0);
+        assert_eq!(required_matches[0].2, "service not running");
+        assert!(optional.matches(&processes).is_empty());
+    }
+
+    #[test]
+    fn multiple_command_matches_warn_unless_multiple_is_allowed() {
+        let processes = process_fixture();
+        let warning: Service = toml::from_str("name = 'worker'").unwrap();
+        let allowed: Service = toml::from_str("name = 'worker'\nmultiple = true").unwrap();
+
+        let warning_matches = warning.matches(&processes);
+        assert_eq!(warning_matches.iter().map(|item| item.1).collect::<Vec<_>>(), vec![2, 4]);
+        assert!(warning_matches.iter().all(|item| item.2 == "multiple matching processes"));
+
+        let allowed_matches = allowed.matches(&processes);
+        assert_eq!(allowed_matches.iter().map(|item| item.1).collect::<Vec<_>>(), vec![2, 4]);
+        assert!(allowed_matches.iter().all(|item| item.2.is_empty()));
+    }
+
+    #[test]
+    fn valid_pidfile_takes_precedence_and_promotes_pid_to_service() {
+        let processes = process_fixture();
+        let pidfile = TempFile::new("3\n");
+        let service: Service =
+            toml::from_str(&format!("name = 'worker'\npidfile = '{}'", pidfile.path().display())).unwrap();
+
+        let matches = service.matches(&processes);
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].1, 2);
+        assert!(matches[0].2.is_empty());
+    }
+
+    #[test]
+    fn invalid_or_missing_pidfile_falls_back_to_command_matches_with_warning() {
+        let processes = process_fixture();
+        let invalid_pidfile = TempFile::new("not-a-pid\n");
+        let missing_pidfile = TempFile::new("");
+        remove_file(missing_pidfile.path()).unwrap();
+
+        for pidfile in [&invalid_pidfile, &missing_pidfile] {
+            let service: Service =
+                toml::from_str(&format!("name = 'worker'\npidfile = '{}'", pidfile.path().display())).unwrap();
+            let matches = service.matches(&processes);
+            assert_eq!(matches.iter().map(|item| item.1).collect::<Vec<_>>(), vec![2, 4]);
+            let expected = format!("invalid PID file {}", pidfile.path().display());
+            assert!(matches.iter().all(|item| item.2 == expected));
+        }
     }
 }

@@ -1,0 +1,7 @@
+[[services]]
+name = "missing-one"
+command = '^upstate-harness-no-such-process-1$'
+
+[[services]]
+name = "missing-two"
+command = '^upstate-harness-no-such-process-2$'
