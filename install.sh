@@ -34,10 +34,9 @@ print_arch() {
 }
 
 print_libc() {
-    case "${OSTYPE:-}" in
-    *-gnu)  echo -n "gnu" ;;
-    *-musl) echo -n "musl" ;;
-    *)      echo -n "" ;;
+    case $(compgen -G '/lib/ld-musl-*.so.1') in
+    "") echo -n "gnu" ;;
+    *)  echo -n "musl" ;;
     esac
 }
 
@@ -46,7 +45,7 @@ download_url() {
     local FILE="$1" URL="$2"
     echo "# Downloading ${URL}..."
     if command -v curl > /dev/null ; then
-        curl --silent --location --fail -o "${FILE}" "${URL}"
+        curl --silent --show-error --location --fail -o "${FILE}" "${URL}"
     elif command -v wget > /dev/null ; then
         wget --quiet -O "${FILE}" "${URL}"
     elif command -v aria2c > /dev/null ; then
@@ -64,18 +63,20 @@ download_files() {
         cd "$(dirname "${PROGRAM}")"
     else
         local DIR URL OS ARCH LIBC BASE="https://github.com/baraverkstad/upstate"
-        DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
-        trap "rm -rf ${DIR}" EXIT
-        cd "${DIR}"
         OS=$(print_os)
         ARCH=$(print_arch)
         LIBC=$(print_libc)
+        [[ -n "${OS}" ]] || die "unsupported operating system: $(uname -s)"
+        [[ -n "${ARCH}" ]] || die "unsupported architecture: $(uname -m)"
+        DIR=$(mktemp --tmpdir --directory upstate-install-XXXXXXXX)
+        trap "rm -rf ${DIR}" EXIT
+        cd "${DIR}"
         if [[ -z "${VERSION:-}" ]] ; then
-            URL="${BASE}/releases/latest/download/upstate-${OS:-*}-${ARCH:-*}-${LIBC:-*}.zip"
+            URL="${BASE}/releases/latest/download/upstate-${OS}-${ARCH}-${LIBC}.zip"
         else
-            URL="${BASE}/releases/download/${VERSION}/upstate-${OS:-*}-${ARCH:-*}-${LIBC:-*}.zip"
+            URL="${BASE}/releases/download/${VERSION}/upstate-${OS}-${ARCH}-${LIBC}.zip"
         fi
-        download_url upstate.zip "${URL}" || die "failed to download URL"
+        download_url upstate.zip "${URL}" || die "failed to download package for ${OS}-${ARCH}-${LIBC} from ${URL}"
         command -v unzip > /dev/null || die "couldn't locate unzip command"
         unzip -q -u -o upstate.zip
         if [[ -d "upstate" || -d "upstate-main" || -d "upstate-${VERSION:-latest}" ]] ; then
