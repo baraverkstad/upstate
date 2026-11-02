@@ -225,26 +225,23 @@ fn cpusummary(sys: &System, fmt: &mut fmt::Format) -> Result<(), sysinfo::Error>
 fn memsummary(sys: &System, fmt: &mut fmt::Format) {
     let sizefmt = FormatSizeOptions::from(BINARY).decimal_places(1);
     let total = sys.total_memory();
-    let free = sys.free_memory();
-    let freepct = 100_f64 * free as f64 / total as f64;
-    let cache = sys.available_memory().saturating_sub(free);
-    let rss = sys.used_memory();
+    let avail = sys.available_memory();
+    let availpct = 100_f64 * avail as f64 / total as f64;
+    let used = sys.used_memory();
     let swap = sys.used_swap();
-    let mem = format!("{} ({:.1}%) free", format_size(free, sizefmt), freepct);
+    let mem = format!("{} ({:.1}%) avail", format_size(avail, sizefmt), availpct);
     let mut detail = vec![
-        format!("{} rss", format_size(rss, sizefmt)),
-        format!("{} cache", format_size(cache, sizefmt)),
+        format!("{} used", format_size(used, sizefmt)),
         format!("{} total", format_size(total, sizefmt)),
     ];
     if swap > 0 {
-        detail.insert(2, format!("{} swap", format_size(swap, sizefmt)));
+        detail.insert(1, format!("{} swap", format_size(swap, sizefmt)));
     }
     fmt.text_summary("memory:", &mem, &detail.join(" \u{2219} "));
     fmt.json_open("memory", false, true);
     fmt.json_key_val("total", total);
-    fmt.json_key_val("free", free);
-    fmt.json_key_val("rss", rss);
-    fmt.json_key_val("cache", cache);
+    fmt.json_key_val("avail", avail);
+    fmt.json_key_val("used", used);
     fmt.json_key_val("swap", swap);
     fmt.json_close(false);
 }

@@ -135,11 +135,11 @@ fn linux_smoke_collects_summary_and_discovers_services() {
     assert_eq!(summary["loadavg"].as_array().unwrap().len(), 3);
     assert!(summary["processes"].as_u64().unwrap() > 0);
     let memory = &summary["memory"];
-    for key in ["total", "free", "rss", "cache", "swap"] {
+    for key in ["total", "avail", "used", "swap"] {
         assert!(memory[key].is_u64(), "{key}: {memory}");
     }
     assert!(memory["total"].as_u64().unwrap() > 0);
-    assert!(memory["free"].as_u64().unwrap() <= memory["total"].as_u64().unwrap());
+    assert!(memory["avail"].as_u64().unwrap() <= memory["total"].as_u64().unwrap());
     for disk in summary["storage"].as_array().unwrap() {
         assert_eq!(
             disk["total"].as_u64().unwrap(),

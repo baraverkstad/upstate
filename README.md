@@ -5,7 +5,7 @@ for the existence of a number of configured processes. A short output example:
 
 ```
     loadavg:  0.06 0.04 0.00             up 264 days ∙ 192 processes ∙ 1 cores
-    memory:   64 MB (6.6%) free          491 MB rss ∙ 426 MB cache ∙ 981 MB total
+    memory:   64 MB (6.6%) avail         917 MB used ∙ 981 MB total
     storage:  16.0 GB (66.6%) free       6.8 GB used ∙ 24.1 GB total ∙ on /
     ● system/cron [297]                  1 MB rss ∙ up 264 days ∙ cpu 00:01:38
     ● ntp [1402230]                      2 MB rss ∙ up 159 days ∙ cpu 00:34:48

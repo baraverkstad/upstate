@@ -4,6 +4,7 @@ _Lists all notable user-visible changes to this project._
 
 ## Unreleased
 
+- Changed machine memory from `free`, `rss`, `cache` to `avail`, `used`
 - Added support for TOML config files (`upstate.toml`, `upstate.toml.d/`)
 - Added global config for `format`, `sort`, `limit`, etc.
 - Added `hostname`, `cpus`, `os`, `kernel`, `architecture` and `collected` to
